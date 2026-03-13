@@ -1,40 +1,44 @@
 const sb = window.supabaseClient;
 
 const userPill = document.getElementById('user-pill');
+
 const form = document.getElementById('item-form');
 const formStatus = document.getElementById('form-status');
-const objectSuggestions = document.getElementById('object-suggestions');
 
-const locateBtn = document.getElementById('locate-btn');
+const titleInput = document.getElementById('title');
+const colorInput = document.getElementById('color');
+const conditionInput = document.getElementById('condition');
 const latInput = document.getElementById('lat');
 const lngInput = document.getElementById('lng');
-const locationStatus = document.getElementById('location-status');
-
 const photoInput = document.getElementById('photo');
-const photoPreviewWrap = document.getElementById('photo-preview-wrap');
-const photoPreview = document.getElementById('photo-preview');
 
 const openAddBtn = document.getElementById('open-add-btn');
 const closeAddBtn = document.getElementById('close-add-btn');
+const submitAddBtn = document.getElementById('submit-add-btn');
 const addModal = document.getElementById('add-modal');
 const modalBackdrop = document.getElementById('modal-backdrop');
+
+const addPhotoImage = document.getElementById('add-photo-image');
+const addPhotoEmpty = document.getElementById('add-photo-empty');
+const retakePhotoBtn = document.getElementById('retake-photo-btn');
+
+const pickTitleBtn = document.getElementById('pick-title-btn');
+const pickColorBtn = document.getElementById('pick-color-btn');
+const pickConditionBtn = document.getElementById('pick-condition-btn');
+
+const pickTitleValue = document.getElementById('pick-title-value');
+const pickColorValue = document.getElementById('pick-color-value');
+const pickConditionValue = document.getElementById('pick-condition-value');
+
+const pickerSheet = document.getElementById('picker-sheet');
+const pickerSearchWrap = document.getElementById('picker-search-wrap');
+const pickerSearchInput = document.getElementById('picker-search-input');
+const pickerOptions = document.getElementById('picker-options');
 
 const mapSearchInput = document.getElementById('map-search');
 const filterAllBtn = document.getElementById('filter-all-btn');
 const filterNewBtn = document.getElementById('filter-new-btn');
 const filterVerifiedBtn = document.getElementById('filter-verified-btn');
-
-const detailModal = document.getElementById('detail-modal');
-const detailBackdrop = document.getElementById('detail-backdrop');
-const detailCloseBtn = document.getElementById('detail-close-btn');
-const detailImage = document.getElementById('detail-image');
-const detailTitle = document.getElementById('detail-title');
-const detailColor = document.getElementById('detail-color');
-const detailCondition = document.getElementById('detail-condition');
-const detailCount = document.getElementById('detail-count');
-const detailStillBtn = document.getElementById('detail-still-btn');
-const detailGoneBtn = document.getElementById('detail-gone-btn');
-const detailReportBtn = document.getElementById('detail-report-btn');
 
 let currentUser = null;
 let map = null;
@@ -42,11 +46,12 @@ let itemsLayer = null;
 let draftMarker = null;
 let userMarker = null;
 let markersById = new Map();
-let activeItemId = null;
-let activeDetailItem = null;
 let allItems = [];
 let currentFilter = 'all';
 let currentSearch = '';
+
+let currentPicker = null;
+let photoPreviewUrl = null;
 
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
@@ -105,6 +110,46 @@ const OBJECT_LIST = [
   'window'
 ];
 
+const COLOR_LIST = [
+  'black',
+  'white',
+  'gray',
+  'silver',
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'blue',
+  'purple',
+  'pink',
+  'brown',
+  'tan',
+  'beige',
+  'cream',
+  'clear',
+  'wood',
+  'metal',
+  'chrome',
+  'steel',
+  'brass',
+  'cane',
+  'wicker',
+  'rattan',
+  'plastic',
+  'glass',
+  'leather',
+  'fabric',
+  'velvet'
+];
+
+const CONDITION_LIST = [
+  'Perfect',
+  'Great',
+  'Good',
+  'Rough',
+  'Salvage'
+];
+
 function escapeHtml(str = '') {
   return String(str)
     .replaceAll('&', '&amp;')
@@ -112,12 +157,6 @@ function escapeHtml(str = '') {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
-}
-
-function renderObjectSuggestions() {
-  objectSuggestions.innerHTML = OBJECT_LIST
-    .map((item) => `<option value="${escapeHtml(item)}"></option>`)
-    .join('');
 }
 
 function setAuthError(message = 'Auth error') {
@@ -218,64 +257,52 @@ function initMap() {
 
   itemsLayer = L.layerGroup().addTo(map);
 
-  map.on('click', (event) => {
-    const { lat, lng } = event.latlng;
-    setDraftLocation(lat, lng, 'Location set from map.');
-  });
-
   setTimeout(() => map.invalidateSize(), 0);
 }
 
-function setDraftLocation(lat, lng, message = 'Location selected.') {
+function setDraftLocation(lat, lng, message = 'Location added.') {
   latInput.value = Number(lat).toFixed(6);
   lngInput.value = Number(lng).toFixed(6);
-  locationStatus.textContent = message;
+  formStatus.textContent = message;
 
-  const titleValue = (document.getElementById('title').value || 'new item').trim();
+  const label = (titleInput.value || 'new item').trim();
 
   if (!draftMarker) {
     draftMarker = L.marker([lat, lng], {
-      icon: createLabeledIcon(titleValue, ' is-draft')
+      icon: createLabeledIcon(label, ' is-draft')
     }).addTo(map);
   } else {
     draftMarker.setLatLng([lat, lng]);
-    draftMarker.setIcon(createLabeledIcon(titleValue, ' is-draft'));
+    draftMarker.setIcon(createLabeledIcon(label, ' is-draft'));
   }
 }
 
 function refreshDraftMarkerLabel() {
   if (!draftMarker) return;
-
-  const titleValue = (document.getElementById('title').value || 'new item').trim();
-  draftMarker.setIcon(createLabeledIcon(titleValue, ' is-draft'));
+  const label = (titleInput.value || 'new item').trim();
+  draftMarker.setIcon(createLabeledIcon(label, ' is-draft'));
 }
 
-function clearDraftLocation() {
-  latInput.value = '';
-  lngInput.value = '';
-  locationStatus.textContent = 'No location selected.';
+async function useCurrentLocation(options = {}) {
+  const { silent = false } = options;
 
-  if (draftMarker) {
-    map.removeLayer(draftMarker);
-    draftMarker = null;
-  }
-}
-
-async function useCurrentLocation() {
   if (!navigator.geolocation) {
-    formStatus.textContent = 'Geolocation is not supported in this browser.';
+    if (!silent) {
+      formStatus.textContent = 'Geolocation is not supported in this browser.';
+    }
     return;
   }
 
-  formStatus.textContent = 'Getting location…';
+  if (!silent) {
+    formStatus.textContent = 'Getting location…';
+  }
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      setDraftLocation(lat, lng, 'Using your current location.');
-      formStatus.textContent = 'Location added.';
+      setDraftLocation(lat, lng, silent ? 'Location ready.' : 'Location added.');
 
       if (!userMarker) {
         userMarker = L.marker([lat, lng], {
@@ -285,11 +312,13 @@ async function useCurrentLocation() {
         userMarker.setLatLng([lat, lng]);
       }
 
-      map.setView([lat, lng], 15);
+      map.setView([lat, lng], 16);
     },
     (error) => {
       console.error(error);
-      formStatus.textContent = `Location failed: ${error.message}`;
+      if (!silent) {
+        formStatus.textContent = `Location failed: ${error.message}`;
+      }
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
@@ -327,44 +356,6 @@ function updateFilterButtons() {
   filterVerifiedBtn.classList.toggle('is-active', currentFilter === 'verified');
 }
 
-function openDetailModal(item) {
-  activeDetailItem = item;
-  activeItemId = item.id ?? null;
-
-  if (detailImage) {
-    if (item.image_url) {
-      detailImage.src = item.image_url;
-      detailImage.style.display = '';
-    } else {
-      detailImage.removeAttribute('src');
-      detailImage.style.display = 'none';
-    }
-  }
-
-  if (detailTitle) {
-    detailTitle.textContent = item.title || 'unknown item';
-  }
-
-  if (detailColor) {
-    detailColor.textContent = item.color || 'Unknown';
-  }
-
-  if (detailCondition) {
-    detailCondition.textContent = item.condition || 'Unknown';
-  }
-
-  if (detailCount) {
-    detailCount.textContent = String(item.confirm_count ?? 0);
-  }
-
-  detailModal.hidden = false;
-}
-
-function closeDetailModal() {
-  detailModal.hidden = true;
-  activeDetailItem = null;
-}
-
 function updateMapMarkers(items) {
   itemsLayer.clearLayers();
   markersById = new Map();
@@ -385,10 +376,6 @@ function updateMapMarkers(items) {
       icon: createLabeledIcon(item.title || 'item')
     });
 
-    marker.on('click', () => {
-      openDetailModal(item);
-    });
-
     marker.addTo(itemsLayer);
     markersById.set(item.id, marker);
     bounds.push([item.lat, item.lng]);
@@ -398,23 +385,9 @@ function updateMapMarkers(items) {
     const latLngBounds = L.latLngBounds(bounds);
     map.fitBounds(latLngBounds, { padding: [60, 120], maxZoom: 16 });
   } else if (draftMarker) {
-    map.setView(draftMarker.getLatLng(), 15);
+    map.setView(draftMarker.getLatLng(), 16);
   } else {
     map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-  }
-}
-
-function focusItemOnMap(itemId) {
-  const marker = markersById.get(itemId);
-  const item = allItems.find((entry) => entry.id === itemId);
-  activeItemId = itemId;
-
-  if (marker) {
-    map.setView(marker.getLatLng(), 16);
-  }
-
-  if (item) {
-    openDetailModal(item);
   }
 }
 
@@ -444,18 +417,169 @@ async function loadItems() {
 
   if (error) {
     console.error('loadItems failed:', error);
-    formStatus.textContent = 'Could not load items.';
     return;
   }
 
   allItems = (data || []).map((item) => ({
     ...item,
     lat: item.lat == null ? null : Number(item.lat),
-    lng: item.lng == null ? null : Number(item.lng),
-    confirm_count: 0
+    lng: item.lng == null ? null : Number(item.lng)
   }));
 
   renderVisibleItems();
+}
+
+function resetPhotoPreview() {
+  if (photoPreviewUrl) {
+    URL.revokeObjectURL(photoPreviewUrl);
+    photoPreviewUrl = null;
+  }
+
+  addPhotoImage.removeAttribute('src');
+  addPhotoImage.hidden = true;
+  addPhotoEmpty.hidden = false;
+  retakePhotoBtn.hidden = true;
+}
+
+function handlePhotoPreview() {
+  const file = photoInput.files?.[0];
+
+  if (!file) {
+    resetPhotoPreview();
+    return;
+  }
+
+  if (photoPreviewUrl) {
+    URL.revokeObjectURL(photoPreviewUrl);
+  }
+
+  photoPreviewUrl = URL.createObjectURL(file);
+  addPhotoImage.src = photoPreviewUrl;
+  addPhotoImage.hidden = false;
+  addPhotoEmpty.hidden = true;
+  retakePhotoBtn.hidden = false;
+}
+
+function hasAtLeastOneSelection() {
+  return Boolean(
+    titleInput.value.trim() ||
+    colorInput.value.trim() ||
+    conditionInput.value.trim()
+  );
+}
+
+function updateSubmitState() {
+  const enabled = hasAtLeastOneSelection();
+  submitAddBtn.disabled = !enabled;
+  submitAddBtn.classList.toggle('is-disabled', !enabled);
+}
+
+function setLineValue(buttonEl, textEl, value, placeholder) {
+  const hasValue = Boolean((value || '').trim());
+  textEl.textContent = hasValue ? value : placeholder;
+  textEl.classList.toggle('is-placeholder', !hasValue);
+  buttonEl.classList.toggle('is-selected', hasValue);
+}
+
+function syncAddUI() {
+  setLineValue(pickTitleBtn, pickTitleValue, titleInput.value, 'What is it?');
+  setLineValue(pickColorBtn, pickColorValue, colorInput.value, 'Color');
+  setLineValue(pickConditionBtn, pickConditionValue, conditionInput.value, 'Condition');
+  updateSubmitState();
+  refreshDraftMarkerLabel();
+}
+
+function openPicker(config) {
+  currentPicker = config;
+  pickerSheet.hidden = false;
+  pickerSearchWrap.hidden = !config.searchable;
+
+  if (config.searchable) {
+    pickerSearchInput.value = config.initialQuery || config.input.value || '';
+    pickerSearchInput.placeholder = config.placeholder || '';
+    renderPickerOptions(config, pickerSearchInput.value);
+    setTimeout(() => pickerSearchInput.focus(), 20);
+  } else {
+    renderPickerOptions(config, '');
+  }
+}
+
+function closePicker() {
+  pickerSheet.hidden = true;
+  currentPicker = null;
+}
+
+function renderPickerOptions(config, query = '') {
+  let options = config.options;
+
+  if (config.searchable) {
+    const q = query.trim().toLowerCase();
+    options = options.filter((item) => item.toLowerCase().includes(q));
+  }
+
+  if (!options.length) {
+    pickerOptions.innerHTML = `<div class="picker-option">No matches</div>`;
+    return;
+  }
+
+  pickerOptions.innerHTML = options
+    .map((item) => {
+      const isSelected = item.toLowerCase() === (config.input.value || '').trim().toLowerCase();
+      return `
+        <button
+          class="picker-option${isSelected ? ' is-selected' : ''}"
+          type="button"
+          data-value="${escapeHtml(item)}"
+        >
+          ${escapeHtml(item)}
+        </button>
+      `;
+    })
+    .join('');
+}
+
+function applyPickerValue(value) {
+  if (!currentPicker) return;
+
+  currentPicker.input.value = value;
+  syncAddUI();
+  closePicker();
+}
+
+function promptCameraCapture() {
+  try {
+    photoInput.click();
+  } catch (error) {
+    console.error('camera open failed', error);
+  }
+}
+
+function openAddModal() {
+  addModal.hidden = false;
+  syncAddUI();
+  setTimeout(() => map.invalidateSize(), 40);
+
+  useCurrentLocation({ silent: true });
+  promptCameraCapture();
+}
+
+function closeAddModal() {
+  addModal.hidden = true;
+  closePicker();
+  formStatus.textContent = '';
+}
+
+function resetAddForm() {
+  form.reset();
+  latInput.value = '';
+  lngInput.value = '';
+  resetPhotoPreview();
+  syncAddUI();
+
+  if (draftMarker) {
+    map.removeLayer(draftMarker);
+    draftMarker = null;
+  }
 }
 
 async function uploadPhoto(file) {
@@ -486,57 +610,23 @@ async function uploadPhoto(file) {
   return data.publicUrl;
 }
 
-function handlePhotoPreview() {
-  const file = photoInput.files?.[0];
-
-  if (!file) {
-    photoPreviewWrap.hidden = true;
-    photoPreview.removeAttribute('src');
-    return;
-  }
-
-  const previewUrl = URL.createObjectURL(file);
-  photoPreview.src = previewUrl;
-  photoPreviewWrap.hidden = false;
-}
-
-function openAddModal() {
-  addModal.hidden = false;
-  setTimeout(() => map.invalidateSize(), 50);
-}
-
-function closeAddModal() {
-  addModal.hidden = true;
-  formStatus.textContent = '';
-}
-
-async function handleSubmit(event) {
-  event.preventDefault();
-
+async function handleSubmit() {
   if (!currentUser) {
     formStatus.textContent = 'No user session yet.';
     return;
   }
 
-  const formData = new FormData(form);
-
-  const title = (formData.get('title') || '').toString().trim().toLowerCase();
-  const color = (formData.get('color') || '').toString().trim();
-  const condition = (formData.get('condition') || '').toString().trim();
-  const photoFile = formData.get('photo');
-
-  const lat = formData.get('lat') ? Number(formData.get('lat')) : null;
-  const lng = formData.get('lng') ? Number(formData.get('lng')) : null;
-
-  if (!title) {
-    formStatus.textContent = 'Please enter what it is.';
+  if (!hasAtLeastOneSelection()) {
+    formStatus.textContent = 'Pick at least one filter.';
     return;
   }
 
-  if (!condition) {
-    formStatus.textContent = 'Please choose a condition.';
-    return;
-  }
+  const title = titleInput.value.trim().toLowerCase() || 'item';
+  const color = colorInput.value.trim() || null;
+  const condition = conditionInput.value.trim() || null;
+  const photoFile = photoInput.files?.[0] || null;
+  const lat = latInput.value ? Number(latInput.value) : null;
+  const lng = lngInput.value ? Number(lngInput.value) : null;
 
   formStatus.textContent = 'Posting…';
 
@@ -553,7 +643,7 @@ async function handleSubmit(event) {
   const payload = {
     created_by: currentUser.id,
     title,
-    color: color || null,
+    color,
     condition,
     description: null,
     category: null,
@@ -574,42 +664,72 @@ async function handleSubmit(event) {
     return;
   }
 
-  form.reset();
-  photoPreviewWrap.hidden = true;
-  photoPreview.removeAttribute('src');
-  clearDraftLocation();
   formStatus.textContent = 'Posted.';
-  activeItemId = null;
   closeAddModal();
+  resetAddForm();
   await loadItems();
 }
 
 function attachEvents() {
-  form.addEventListener('submit', handleSubmit);
-  locateBtn.addEventListener('click', useCurrentLocation);
-  photoInput.addEventListener('change', handlePhotoPreview);
-
   openAddBtn.addEventListener('click', openAddModal);
   closeAddBtn.addEventListener('click', closeAddModal);
   modalBackdrop.addEventListener('click', closeAddModal);
+  submitAddBtn.addEventListener('click', handleSubmit);
 
-  if (detailCloseBtn) {
-    detailCloseBtn.addEventListener('click', closeDetailModal);
-  }
+  retakePhotoBtn.addEventListener('click', promptCameraCapture);
+  photoInput.addEventListener('change', handlePhotoPreview);
 
-  if (detailBackdrop) {
-    detailBackdrop.addEventListener('click', closeDetailModal);
-  }
+  pickTitleBtn.addEventListener('click', () => {
+    openPicker({
+      key: 'title',
+      input: titleInput,
+      options: OBJECT_LIST,
+      searchable: true,
+      placeholder: 'Chair',
+      initialQuery: titleInput.value
+    });
+  });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !addModal.hidden) {
-      closeAddModal();
-    }
+  pickColorBtn.addEventListener('click', () => {
+    openPicker({
+      key: 'color',
+      input: colorInput,
+      options: COLOR_LIST,
+      searchable: true,
+      placeholder: 'wood'
+    });
+  });
 
-    if (event.key === 'Escape' && !detailModal.hidden) {
-      closeDetailModal();
+  pickConditionBtn.addEventListener('click', () => {
+    openPicker({
+      key: 'condition',
+      input: conditionInput,
+      options: CONDITION_LIST,
+      searchable: false,
+      placeholder: ''
+    });
+  });
+
+  pickerSearchInput.addEventListener('input', () => {
+    if (!currentPicker) return;
+    renderPickerOptions(currentPicker, pickerSearchInput.value);
+  });
+
+  pickerOptions.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-value]');
+    if (!button) return;
+    applyPickerValue(button.dataset.value || '');
+  });
+
+  pickerSheet.addEventListener('click', (event) => {
+    if (event.target === pickerSheet) {
+      closePicker();
     }
   });
+
+  titleInput.addEventListener('input', syncAddUI);
+  colorInput.addEventListener('input', syncAddUI);
+  conditionInput.addEventListener('input', syncAddUI);
 
   mapSearchInput.addEventListener('input', (event) => {
     currentSearch = event.target.value.trim();
@@ -631,36 +751,25 @@ function attachEvents() {
     renderVisibleItems();
   });
 
-  document.getElementById('title').addEventListener('input', refreshDraftMarkerLabel);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !pickerSheet.hidden) {
+      closePicker();
+      return;
+    }
 
-  if (detailStillBtn) {
-    detailStillBtn.addEventListener('click', () => {
-      console.log('still there clicked', activeDetailItem);
-    });
-  }
-
-  if (detailGoneBtn) {
-    detailGoneBtn.addEventListener('click', () => {
-      console.log('gone clicked', activeDetailItem);
-    });
-  }
-
-  if (detailReportBtn) {
-    detailReportBtn.addEventListener('click', () => {
-      console.log('report clicked', activeDetailItem);
-    });
-  }
+    if (event.key === 'Escape' && !addModal.hidden) {
+      closeAddModal();
+    }
+  });
 }
 
 async function init() {
-  renderObjectSuggestions();
   initMap();
   attachEvents();
+  resetAddForm();
 
   const signedIn = await ensureAnonymousSession();
-  if (!signedIn) {
-    return;
-  }
+  if (!signedIn) return;
 
   await loadItems();
 }

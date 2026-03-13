@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
   <title>reThing</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./styles.css" />
@@ -28,7 +31,14 @@
           placeholder="search"
           autocomplete="off"
         />
-        <button id="open-add-btn" class="icon-btn" type="button" aria-label="Add item">+</button>
+        <button
+          id="open-add-btn"
+          class="map-add-btn"
+          type="button"
+          aria-label="Add item"
+        >
+          <span>+</span>
+        </button>
       </div>
 
       <div class="filter-row">
@@ -38,162 +48,117 @@
       </div>
     </div>
 
-    <!-- ADD MODAL -->
-    <div id="add-modal" class="modal" hidden>
-      <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="add-modal" class="add-flow" hidden>
+      <div id="modal-backdrop" class="add-flow__backdrop"></div>
 
       <section
-        class="modal-panel"
+        class="add-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-item-title"
       >
-        <div class="modal-head">
-          <h1 id="add-item-title">Add an item</h1>
-          <button id="close-add-btn" class="modal-close" type="button" aria-label="Close">×</button>
-        </div>
-
-        <form id="item-form" novalidate>
-          <div class="field">
-            <label for="title">What is it?</label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              list="object-suggestions"
-              placeholder="chair"
-              autocomplete="off"
-              required
-            />
-            <datalist id="object-suggestions"></datalist>
+        <div class="add-photo-frame" id="add-photo-frame">
+          <img
+            id="add-photo-image"
+            class="add-photo-image"
+            alt="Selected item"
+            hidden
+          />
+          <div class="add-photo-empty" id="add-photo-empty">
+            <div class="add-photo-empty__label">Opening camera…</div>
           </div>
+          <div class="add-photo-shade"></div>
 
-          <div class="field">
-            <label for="color">Color / material</label>
-            <input
-              id="color"
-              name="color"
-              type="text"
-              placeholder="brown wood"
-              autocomplete="off"
-            />
-          </div>
-
-          <div class="field">
-            <label for="condition">Condition</label>
-            <select id="condition" name="condition" required>
-              <option value="">Choose condition</option>
-              <option value="Perfect">Perfect</option>
-              <option value="Great">Great</option>
-              <option value="Good">Good</option>
-              <option value="Rough">Rough</option>
-              <option value="Salvage">Salvage</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="photo">Photo</label>
-            <input
-              id="photo"
-              name="photo"
-              type="file"
-              accept="image/*"
-              capture="environment"
-            />
-            <div class="photo-preview-wrap" id="photo-preview-wrap" hidden>
-              <img id="photo-preview" class="photo-preview" alt="Preview" />
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="location-row">
-              <label>Location</label>
-              <button id="locate-btn" class="secondary-btn small-btn" type="button">
-                Use my location
-              </button>
-            </div>
-
-            <div class="location-status" id="location-status">No location selected.</div>
-
-            <div class="coord-grid">
-              <input id="lat" name="lat" type="text" placeholder="Latitude" readonly />
-              <input id="lng" name="lng" type="text" placeholder="Longitude" readonly />
-            </div>
-
-            <div class="map-note">Tap the map behind this modal to place the item manually.</div>
-          </div>
-
-          <button type="submit" class="primary-btn">Post item</button>
-          <div id="form-status" class="status-line"></div>
-        </form>
-      </section>
-    </div>
-
-    <!-- DETAIL MODAL -->
-    <div id="detail-modal" class="detail-modal" hidden>
-      <div id="detail-backdrop" class="detail-backdrop"></div>
-
-      <section
-        class="detail-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="detail-title"
-      >
-        <div class="detail-image-wrap">
           <button
-            id="detail-report-btn"
-            class="detail-report-btn"
+            id="retake-photo-btn"
+            class="retake-photo-btn"
             type="button"
-            aria-label="Report item"
+            hidden
           >
-            <span class="detail-report-icon">⚠</span>
-            <span class="detail-report-text">report</span>
+            retake photo
           </button>
 
+          <div class="add-fields">
+            <h1 id="add-item-title" class="sr-only">Add item</h1>
+
+            <button
+              id="pick-title-btn"
+              class="add-line-btn"
+              type="button"
+            >
+              <span id="pick-title-value" class="add-line-btn__text is-placeholder">What is it?</span>
+            </button>
+
+            <button
+              id="pick-color-btn"
+              class="add-line-btn"
+              type="button"
+            >
+              <span id="pick-color-value" class="add-line-btn__text is-placeholder">Color</span>
+            </button>
+
+            <button
+              id="pick-condition-btn"
+              class="add-line-btn"
+              type="button"
+            >
+              <span id="pick-condition-value" class="add-line-btn__text is-placeholder">Condition</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="add-status" id="form-status"></div>
+
+        <div class="add-bottom-bar">
           <button
-            id="detail-close-btn"
-            class="detail-close-btn"
+            id="close-add-btn"
+            class="ghost-close-btn"
             type="button"
-            aria-label="Close detail view"
+            aria-label="Close add item"
           >
             ×
           </button>
 
-          <img
-            id="detail-image"
-            class="detail-image"
-            src=""
-            alt="Item photo"
-          />
+          <button
+            id="submit-add-btn"
+            class="submit-add-btn is-disabled"
+            type="button"
+            aria-label="Post item"
+            disabled
+          >
+            <span>+</span>
+          </button>
         </div>
 
-        <div class="detail-body">
-          <div class="detail-field">
-            <div id="detail-title" class="detail-value">dining chair</div>
-            <div class="detail-divider"></div>
+        <form id="item-form" class="sr-only" novalidate>
+          <input id="title" name="title" type="text" autocomplete="off" />
+          <input id="color" name="color" type="text" autocomplete="off" />
+          <input id="condition" name="condition" type="text" autocomplete="off" />
+          <input id="lat" name="lat" type="text" readonly />
+          <input id="lng" name="lng" type="text" readonly />
+          <input
+            id="photo"
+            name="photo"
+            type="file"
+            accept="image/*"
+            capture="environment"
+          />
+        </form>
+      </section>
+
+      <section id="picker-sheet" class="picker-sheet" hidden>
+        <div class="picker-sheet__panel">
+          <div id="picker-search-wrap" class="picker-sheet__search">
+            <input
+              id="picker-search-input"
+              class="picker-sheet__search-input"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+            />
           </div>
 
-          <div class="detail-field">
-            <div id="detail-color" class="detail-value">Wood</div>
-            <div class="detail-divider"></div>
-          </div>
-
-          <div class="detail-field">
-            <div id="detail-condition" class="detail-value">Scruffy</div>
-            <div class="detail-divider"></div>
-          </div>
-
-          <div class="detail-actions">
-            <button id="detail-still-btn" class="detail-action detail-action-still" type="button">
-              still there
-            </button>
-
-            <div id="detail-count" class="detail-count">9</div>
-
-            <button id="detail-gone-btn" class="detail-action detail-action-gone" type="button">
-              gone
-            </button>
-          </div>
+          <div id="picker-options" class="picker-sheet__options"></div>
         </div>
       </section>
     </div>
