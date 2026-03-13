@@ -61,7 +61,13 @@ button { -webkit-tap-highlight-color: transparent; }
   gap: 16px;
   pointer-events: none;
 }
-.brand-wrap, .user-pill { pointer-events: auto; }
+.top-left-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: auto;
+}
+.brand-wrap, .user-pill, .here-btn { pointer-events: auto; }
 .brand-wrap { display: none; }
 .brand {
   font-size: 44px;
@@ -83,6 +89,27 @@ button { -webkit-tap-highlight-color: transparent; }
   font-size: 14px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(6px);
+}
+.here-btn {
+    height: 52px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(107 127 195);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+}
+n.is-locating {
+  min-width: 96px;
+}
+.here-btn:disabled {
+  opacity: 0.9;
+  cursor: default;
 }
 .floating-controls {
   position: absolute;
@@ -524,6 +551,12 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 @media (max-width: 700px) {
   .floating-topbar { top: 12px; left: 12px; right: 12px; }
+  .top-left-controls { gap: 8px; }
+  .here-btn {
+      height: 37px;
+      padding: 0 11px;
+      font-size: 12px;
+  }
   .floating-controls { left: 12px; right: 12px; bottom: 94px; gap: 12px; }
   .search-input { height: 47px; font-size: 18px; padding: 0 22px; }
   .map-add-btn { width: 98px; height: 47px; font-size: 42px; }
