@@ -12,6 +12,13 @@
   --chip-dot-center: #0d922f;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
   --radius: 22px;
+
+  --detail-bg: #000000;
+  --detail-text: #eef07a;
+  --detail-line: #cfd746;
+  --detail-report: rgba(154, 87, 47, 0.88);
+  --detail-still: #13a332;
+  --detail-gone: #ff170d;
 }
 
 * {
@@ -37,6 +44,10 @@ button,
 input,
 select {
   font: inherit;
+}
+
+img {
+  max-width: 100%;
 }
 
 .app-shell {
@@ -178,6 +189,7 @@ select {
   color: var(--chip-text);
 }
 
+/* GENERIC MODAL */
 .modal[hidden] {
   display: none;
 }
@@ -353,6 +365,7 @@ select:focus {
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+/* MAP MARKERS */
 .rething-marker {
   background: transparent;
   border: 0;
@@ -404,6 +417,170 @@ select:focus {
   background: #0a5c7d;
 }
 
+/* DETAIL MODAL */
+.detail-modal[hidden] {
+  display: none;
+}
+
+.detail-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 2500;
+}
+
+.detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.detail-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(720px, calc(100vw - 40px));
+  max-height: calc(100vh - 28px);
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border-radius: 44px;
+  background: var(--detail-bg);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+}
+
+.detail-image-wrap {
+  position: relative;
+  background: #1f1f1f;
+}
+
+.detail-image {
+  display: block;
+  width: 100%;
+  height: 62vh;
+  max-height: 900px;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+.detail-report-btn {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--detail-report);
+  color: var(--detail-text);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+}
+
+.detail-report-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.detail-report-text {
+  line-height: 1;
+}
+
+.detail-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 3;
+  width: 62px;
+  height: 62px;
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 42px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.detail-body {
+  background: var(--detail-bg);
+  padding: 32px 40px 34px;
+}
+
+.detail-field {
+  margin-bottom: 28px;
+}
+
+.detail-value {
+  color: var(--detail-text);
+  font-size: clamp(30px, 4vw, 40px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.detail-divider {
+  margin-top: 12px;
+  width: 100%;
+  height: 2px;
+  background: var(--detail-line);
+}
+
+.detail-actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin-top: 42px;
+  padding-top: 14px;
+}
+
+.detail-action {
+  height: 74px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--detail-text);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  cursor: pointer;
+}
+
+.detail-action-still {
+  background: var(--detail-still);
+}
+
+.detail-action-gone {
+  background: var(--detail-gone);
+}
+
+.detail-count {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -32%);
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: #efefe9;
+  color: #2c2c2c;
+  font-size: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+}
+
+/* LEAFLET */
 .leaflet-control-zoom {
   margin-top: 88px !important;
 }
@@ -450,12 +627,12 @@ select:focus {
     font-size: 48px;
   }
 
-      .filter-btn {
-          min-width: 0;
-          height: 31px;
-          font-size: 18px;
-          padding: 0 24px;
-      }
+  .filter-btn {
+    min-width: 0;
+    height: 31px;
+    font-size: 18px;
+    padding: 0 24px;
+  }
 
   .modal-panel {
     width: calc(100vw - 20px);
@@ -489,5 +666,66 @@ select:focus {
 
   .map-chip__label {
     font-size: 18px;
+  }
+
+  .detail-panel {
+    width: calc(100vw - 28px);
+    max-height: calc(100vh - 20px);
+    border-radius: 34px;
+  }
+
+  .detail-image {
+    height: 52vh;
+    min-height: 300px;
+  }
+
+  .detail-report-btn {
+    top: 14px;
+    left: 14px;
+    height: 46px;
+    padding: 0 16px;
+    font-size: 22px;
+    gap: 8px;
+  }
+
+  .detail-report-icon {
+    font-size: 22px;
+  }
+
+  .detail-close-btn {
+    top: 14px;
+    right: 14px;
+    width: 50px;
+    height: 50px;
+    font-size: 34px;
+    border-width: 2px;
+  }
+
+  .detail-body {
+    padding: 22px 24px 28px;
+  }
+
+  .detail-field {
+    margin-bottom: 22px;
+  }
+
+  .detail-divider {
+    margin-top: 10px;
+  }
+
+  .detail-actions {
+    gap: 18px;
+    margin-top: 28px;
+    padding-top: 10px;
+  }
+
+  .detail-action {
+    height: 62px;
+  }
+
+  .detail-count {
+    width: 46px;
+    height: 46px;
+    font-size: 22px;
   }
 }
