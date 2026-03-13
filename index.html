@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>reThing</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="map" class="map-fullscreen"></div>
+
+    <header class="floating-topbar">
+      <div class="brand-wrap">
+        <div class="brand">reThing</div>
+        <div class="subbrand">street finds worth saving</div>
+      </div>
+      <div class="user-pill" id="user-pill">Connecting…</div>
+    </header>
+
+    <div class="floating-controls">
+      <div class="search-row">
+        <input
+          id="map-search"
+          class="search-input"
+          type="text"
+          placeholder="search"
+          autocomplete="off"
+        />
+        <button id="open-add-btn" class="icon-btn" type="button" aria-label="Add item">+</button>
+      </div>
+
+      <div class="filter-row">
+        <button id="filter-all-btn" class="filter-btn is-active" type="button">show all</button>
+        <button id="filter-new-btn" class="filter-btn" type="button">new</button>
+        <button id="filter-verified-btn" class="filter-btn filter-btn--green" type="button">verified</button>
+      </div>
+    </div>
+
+    <div id="add-modal" class="modal" hidden>
+      <div id="modal-backdrop" class="modal-backdrop"></div>
+
+      <section
+        class="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-item-title"
+      >
+        <div class="modal-head">
+          <h1 id="add-item-title">Add an item</h1>
+          <button id="close-add-btn" class="modal-close" type="button" aria-label="Close">×</button>
+        </div>
+
+        <form id="item-form" novalidate>
+          <div class="field">
+            <label for="title">What is it?</label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              list="object-suggestions"
+              placeholder="chair"
+              autocomplete="off"
+              required
+            />
+            <datalist id="object-suggestions"></datalist>
+          </div>
+
+          <div class="field">
+            <label for="color">Color / material</label>
+            <input
+              id="color"
+              name="color"
+              type="text"
+              placeholder="brown wood"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="field">
+            <label for="condition">Condition</label>
+            <select id="condition" name="condition" required>
+              <option value="">Choose condition</option>
+              <option value="Perfect">Perfect</option>
+              <option value="Great">Great</option>
+              <option value="Good">Good</option>
+              <option value="Rough">Rough</option>
+              <option value="Salvage">Salvage</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="photo">Photo</label>
+            <input
+              id="photo"
+              name="photo"
+              type="file"
+              accept="image/*"
+              capture="environment"
+            />
+            <div class="photo-preview-wrap" id="photo-preview-wrap" hidden>
+              <img id="photo-preview" class="photo-preview" alt="Preview" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="location-row">
+              <label>Location</label>
+              <button id="locate-btn" class="secondary-btn small-btn" type="button">
+                Use my location
+              </button>
+            </div>
+
+            <div class="location-status" id="location-status">No location selected.</div>
+
+            <div class="coord-grid">
+              <input id="lat" name="lat" type="text" placeholder="Latitude" readonly />
+              <input id="lng" name="lng" type="text" placeholder="Longitude" readonly />
+            </div>
+
+            <div class="map-note">Tap the map behind this modal to place the item manually.</div>
+          </div>
+
+          <button type="submit" class="primary-btn">Post item</button>
+          <div id="form-status" class="status-line"></div>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
