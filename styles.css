@@ -456,8 +456,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .detail-action-btn--red { background: #ff170d; }
 .detail-count-bubble {
   position: absolute;
-  left: 50%;
-  top: -6px;
+  left: 45%;
+  top: -11px;
   transform: translateX(-50%);
   width: 50px;
   height: 50px;
@@ -522,13 +522,13 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 @media (max-width: 700px) {
   .floating-topbar { top: 12px; left: 12px; right: 12px; }
-  .floating-controls { left: 12px; right: 12px; bottom: 14px; gap: 12px; }
+  .floating-controls { left: 12px; right: 12px; bottom: 54px; gap: 12px; }
   .search-input { height: 64px; font-size: 26px; padding: 0 22px; }
   .map-add-btn { width: 98px; height: 64px; font-size: 48px; }
   .filter-btn { min-width: 0; height: 31px; font-size: 18px; padding: 0 24px; }
   .add-card, .detail-card {
     width: calc(100vw - 56px);
-    height: calc(100vh - 88px);
+    height: calc(100vh - 140px);
     border-radius: 34px;
   }
   .add-fields { top: 96px; left: 28px; right: 28px; gap: 40px; }
@@ -558,14 +558,14 @@ button { -webkit-tap-highlight-color: transparent; }
   .detail-panel {
     padding: 22px 24px 26px;
   }
-  .detail-line-value { font-size: 28px; }
+  .detail-line-value { font-size: 24px; }
   .detail-line-rule { margin-top: 10px; height: 2px; }
   .detail-actions { gap: 18px; }
-  .detail-action-btn { height: 58px; font-size: 24px; }
+  .detail-action-btn { height: 36px; font-size: 21px; }
   .detail-count-bubble {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
+      width: 26px;
+      height: 26px;
+      font-size: 16px;
   }
   .map-chip { height: 42px; padding: 0 16px 0 10px; gap: 10px; }
   .map-chip__dot { width: 24px; height: 24px; flex-basis: 24px; }
