@@ -450,12 +450,12 @@ select:focus {
     font-size: 48px;
   }
 
-  .filter-btn {
-    min-width: 130px;
-    height: 50px;
-    font-size: 22px;
-    padding: 0 18px;
-  }
+      .filter-btn {
+          min-width: 0;
+          height: 31px;
+          font-size: 18px;
+          padding: 0 24px;
+      }
 
   .modal-panel {
     width: calc(100vw - 20px);
