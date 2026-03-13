@@ -40,6 +40,19 @@ const filterAllBtn = document.getElementById('filter-all-btn');
 const filterNewBtn = document.getElementById('filter-new-btn');
 const filterVerifiedBtn = document.getElementById('filter-verified-btn');
 
+const detailModal = document.getElementById('detail-modal');
+const detailBackdrop = document.getElementById('detail-backdrop');
+const detailCloseBtn = document.getElementById('detail-close-btn');
+const detailImage = document.getElementById('detail-image');
+const detailImagePlaceholder = document.getElementById('detail-image-placeholder');
+const detailTitle = document.getElementById('detail-title');
+const detailColor = document.getElementById('detail-color');
+const detailCondition = document.getElementById('detail-condition');
+const detailCount = document.getElementById('detail-count');
+const detailStillBtn = document.getElementById('detail-still-btn');
+const detailGoneBtn = document.getElementById('detail-gone-btn');
+const detailReportBtn = document.getElementById('detail-report-btn');
+
 let currentUser = null;
 let map = null;
 let itemsLayer = null;
@@ -52,6 +65,8 @@ let currentSearch = '';
 
 let currentPicker = null;
 let photoPreviewUrl = null;
+let activeItemId = null;
+let activeDetailItem = null;
 
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
@@ -376,6 +391,10 @@ function updateMapMarkers(items) {
       icon: createLabeledIcon(item.title || 'item')
     });
 
+    marker.on('click', () => {
+      openDetailModal(item);
+    });
+
     marker.addTo(itemsLayer);
     markersById.set(item.id, marker);
     bounds.push([item.lat, item.lng]);
@@ -423,10 +442,56 @@ async function loadItems() {
   allItems = (data || []).map((item) => ({
     ...item,
     lat: item.lat == null ? null : Number(item.lat),
-    lng: item.lng == null ? null : Number(item.lng)
+    lng: item.lng == null ? null : Number(item.lng),
+    confirm_count: item.confirm_count ?? 0
   }));
 
   renderVisibleItems();
+}
+
+
+function openDetailModal(item) {
+  activeDetailItem = item;
+  activeItemId = item.id ?? null;
+
+  if (!detailModal) return;
+
+  if (detailImage) {
+    if (item.image_url) {
+      detailImage.src = item.image_url;
+      detailImage.hidden = false;
+      if (detailImagePlaceholder) detailImagePlaceholder.hidden = true;
+    } else {
+      detailImage.removeAttribute('src');
+      detailImage.hidden = true;
+      if (detailImagePlaceholder) detailImagePlaceholder.hidden = false;
+    }
+  }
+
+  if (detailTitle) {
+    detailTitle.textContent = (item.title || 'unknown item').toLowerCase();
+  }
+
+  if (detailColor) {
+    detailColor.textContent = item.color || 'Unknown';
+  }
+
+  if (detailCondition) {
+    detailCondition.textContent = item.condition || 'Unknown';
+  }
+
+  if (detailCount) {
+    detailCount.textContent = String(item.confirm_count ?? 0);
+  }
+
+  detailModal.hidden = false;
+}
+
+function closeDetailModal() {
+  if (!detailModal) return;
+  detailModal.hidden = true;
+  activeDetailItem = null;
+  activeItemId = null;
 }
 
 function resetPhotoPreview() {
@@ -751,6 +816,32 @@ function attachEvents() {
     renderVisibleItems();
   });
 
+  if (detailCloseBtn) {
+    detailCloseBtn.addEventListener('click', closeDetailModal);
+  }
+
+  if (detailBackdrop) {
+    detailBackdrop.addEventListener('click', closeDetailModal);
+  }
+
+  if (detailStillBtn) {
+    detailStillBtn.addEventListener('click', () => {
+      console.log('still there clicked', activeDetailItem);
+    });
+  }
+
+  if (detailGoneBtn) {
+    detailGoneBtn.addEventListener('click', () => {
+      console.log('gone clicked', activeDetailItem);
+    });
+  }
+
+  if (detailReportBtn) {
+    detailReportBtn.addEventListener('click', () => {
+      console.log('report clicked', activeDetailItem);
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !pickerSheet.hidden) {
       closePicker();
@@ -759,6 +850,11 @@ function attachEvents() {
 
     if (event.key === 'Escape' && !addModal.hidden) {
       closeAddModal();
+      return;
+    }
+
+    if (event.key === 'Escape' && detailModal && !detailModal.hidden) {
+      closeDetailModal();
     }
   });
 }

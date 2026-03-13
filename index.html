@@ -164,6 +164,56 @@
     </div>
   </div>
 
+    <div id="detail-modal" class="detail-modal" hidden>
+      <div id="detail-backdrop" class="detail-modal__backdrop"></div>
+
+      <section
+        class="detail-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="detail-title"
+      >
+        <button
+          id="detail-close-btn"
+          class="detail-close-btn"
+          type="button"
+          aria-label="Close detail"
+        >
+          ×
+        </button>
+
+        <div class="detail-media-wrap">
+          <img id="detail-image" class="detail-image" alt="" />
+          <div class="detail-image-placeholder" id="detail-image-placeholder">No photo</div>
+        </div>
+
+        <div class="detail-body">
+          <h2 id="detail-title" class="detail-title">item</h2>
+
+          <div class="detail-meta">
+            <div class="detail-meta__row">
+              <span class="detail-meta__label">Color</span>
+              <span id="detail-color" class="detail-meta__value">Unknown</span>
+            </div>
+            <div class="detail-meta__row">
+              <span class="detail-meta__label">Condition</span>
+              <span id="detail-condition" class="detail-meta__value">Unknown</span>
+            </div>
+            <div class="detail-meta__row">
+              <span class="detail-meta__label">Confirmed</span>
+              <span id="detail-count" class="detail-meta__value">0</span>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <button id="detail-still-btn" class="detail-action-btn" type="button">still there</button>
+            <button id="detail-gone-btn" class="detail-action-btn" type="button">gone</button>
+            <button id="detail-report-btn" class="detail-action-btn detail-action-btn--ghost" type="button">report</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="./supabase-config.js"></script>
