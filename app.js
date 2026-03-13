@@ -93,7 +93,7 @@ const OBJECT_LIST = [
 ];
 
 function escapeHtml(str = '') {
-  return str
+  return String(str)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -107,31 +107,9 @@ function renderObjectSuggestions() {
     .join('');
 }
 
-async function ensureAnonymousSession() {
-  const { data: userData, error: getUserError } = await sb.auth.getUser();
-
-  if (getUserError) {
-    console.error(getUserError);
-    userPill.textContent = 'Auth error';
-    return;
-  }
-
-  if (userData?.user) {
-    currentUser = userData.user;
-    renderUser();
-    return;
-  }
-
-  const { data, error } = await sb.auth.signInAnonymously();
-
-  if (error) {
-    console.error(error);
-    userPill.textContent = 'Auth error';
-    return;
-  }
-
-  currentUser = data.user;
-  renderUser();
+function setAuthError(message = 'Auth error') {
+  console.error(message);
+  userPill.textContent = message;
 }
 
 function renderUser() {
@@ -141,6 +119,61 @@ function renderUser() {
   }
 
   userPill.textContent = `anon ${currentUser.id.slice(0, 8)}`;
+}
+
+async function ensureAnonymousSession() {
+  if (!sb?.auth) {
+    setAuthError('Auth unavailable');
+    return false;
+  }
+
+  try {
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+
+    if (sessionError) {
+      console.error('getSession failed:', sessionError);
+      setAuthError('Auth error');
+      return false;
+    }
+
+    if (!sessionData?.session) {
+      const { data: signInData, error: signInError } = await sb.auth.signInAnonymously();
+
+      if (signInError) {
+        console.error('signInAnonymously failed:', signInError);
+        setAuthError('Auth error');
+        return false;
+      }
+
+      currentUser = signInData?.user ?? signInData?.session?.user ?? null;
+    } else {
+      currentUser = sessionData.session.user ?? null;
+    }
+
+    if (!currentUser) {
+      const { data: userData, error: userError } = await sb.auth.getUser();
+
+      if (userError) {
+        console.error('getUser failed:', userError);
+        setAuthError('Auth error');
+        return false;
+      }
+
+      currentUser = userData?.user ?? null;
+    }
+
+    if (!currentUser) {
+      setAuthError('No user session');
+      return false;
+    }
+
+    renderUser();
+    return true;
+  } catch (error) {
+    console.error('ensureAnonymousSession unexpected error:', error);
+    setAuthError('Auth error');
+    return false;
+  }
 }
 
 function createLabeledIcon(label, variant = '') {
@@ -208,6 +241,7 @@ function clearDraftLocation() {
   latInput.value = '';
   lngInput.value = '';
   locationStatus.textContent = 'No location selected.';
+
   if (draftMarker) {
     map.removeLayer(draftMarker);
     draftMarker = null;
@@ -263,16 +297,13 @@ function applyFilters(items) {
   if (currentSearch) {
     const q = currentSearch.toLowerCase();
     filtered = filtered.filter((item) => {
-      return [
-        item.title || '',
-        item.color || '',
-        item.condition || ''
-      ].some((value) => value.toLowerCase().includes(q));
+      return [item.title || '', item.color || '', item.condition || '']
+        .some((value) => value.toLowerCase().includes(q));
     });
   }
 
   if (currentFilter === 'new') {
-    const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000);
+    const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
     filtered = filtered.filter((item) => {
       const created = item.created_at ? new Date(item.created_at).getTime() : 0;
       return created >= twoDaysAgo;
@@ -368,7 +399,8 @@ async function loadItems() {
     .limit(100);
 
   if (error) {
-    console.error(error);
+    console.error('loadItems failed:', error);
+    formStatus.textContent = 'Could not load items.';
     return;
   }
 
@@ -549,7 +581,12 @@ async function init() {
   renderObjectSuggestions();
   initMap();
   attachEvents();
-  await ensureAnonymousSession();
+
+  const signedIn = await ensureAnonymousSession();
+  if (!signedIn) {
+    return;
+  }
+
   await loadItems();
 }
 
