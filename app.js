@@ -24,6 +24,18 @@ const filterAllBtn = document.getElementById('filter-all-btn');
 const filterNewBtn = document.getElementById('filter-new-btn');
 const filterVerifiedBtn = document.getElementById('filter-verified-btn');
 
+const detailModal = document.getElementById('detail-modal');
+const detailBackdrop = document.getElementById('detail-backdrop');
+const detailCloseBtn = document.getElementById('detail-close-btn');
+const detailImage = document.getElementById('detail-image');
+const detailTitle = document.getElementById('detail-title');
+const detailColor = document.getElementById('detail-color');
+const detailCondition = document.getElementById('detail-condition');
+const detailCount = document.getElementById('detail-count');
+const detailStillBtn = document.getElementById('detail-still-btn');
+const detailGoneBtn = document.getElementById('detail-gone-btn');
+const detailReportBtn = document.getElementById('detail-report-btn');
+
 let currentUser = null;
 let map = null;
 let itemsLayer = null;
@@ -31,6 +43,7 @@ let draftMarker = null;
 let userMarker = null;
 let markersById = new Map();
 let activeItemId = null;
+let activeDetailItem = null;
 let allItems = [];
 let currentFilter = 'all';
 let currentSearch = '';
@@ -282,15 +295,6 @@ async function useCurrentLocation() {
   );
 }
 
-function markerPopupHtml(item) {
-  return `
-    <strong>${escapeHtml(item.title || '')}</strong>
-    ${item.color ? `<br>${escapeHtml(item.color)}` : ''}
-    ${item.condition ? `<br>${escapeHtml(item.condition)}` : ''}
-    ${item.image_url ? `<br><br><img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title || '')}" style="width:180px;max-width:100%;border-radius:12px;">` : ''}
-  `;
-}
-
 function applyFilters(items) {
   let filtered = [...items];
 
@@ -323,6 +327,44 @@ function updateFilterButtons() {
   filterVerifiedBtn.classList.toggle('is-active', currentFilter === 'verified');
 }
 
+function openDetailModal(item) {
+  activeDetailItem = item;
+  activeItemId = item.id ?? null;
+
+  if (detailImage) {
+    if (item.image_url) {
+      detailImage.src = item.image_url;
+      detailImage.style.display = '';
+    } else {
+      detailImage.removeAttribute('src');
+      detailImage.style.display = 'none';
+    }
+  }
+
+  if (detailTitle) {
+    detailTitle.textContent = item.title || 'unknown item';
+  }
+
+  if (detailColor) {
+    detailColor.textContent = item.color || 'Unknown';
+  }
+
+  if (detailCondition) {
+    detailCondition.textContent = item.condition || 'Unknown';
+  }
+
+  if (detailCount) {
+    detailCount.textContent = String(item.confirm_count ?? 0);
+  }
+
+  detailModal.hidden = false;
+}
+
+function closeDetailModal() {
+  detailModal.hidden = true;
+  activeDetailItem = null;
+}
+
 function updateMapMarkers(items) {
   itemsLayer.clearLayers();
   markersById = new Map();
@@ -343,10 +385,8 @@ function updateMapMarkers(items) {
       icon: createLabeledIcon(item.title || 'item')
     });
 
-    marker.bindPopup(markerPopupHtml(item));
-
     marker.on('click', () => {
-      activeItemId = item.id;
+      openDetailModal(item);
     });
 
     marker.addTo(itemsLayer);
@@ -366,11 +406,15 @@ function updateMapMarkers(items) {
 
 function focusItemOnMap(itemId) {
   const marker = markersById.get(itemId);
+  const item = allItems.find((entry) => entry.id === itemId);
   activeItemId = itemId;
 
   if (marker) {
     map.setView(marker.getLatLng(), 16);
-    marker.openPopup();
+  }
+
+  if (item) {
+    openDetailModal(item);
   }
 }
 
@@ -407,7 +451,8 @@ async function loadItems() {
   allItems = (data || []).map((item) => ({
     ...item,
     lat: item.lat == null ? null : Number(item.lat),
-    lng: item.lng == null ? null : Number(item.lng)
+    lng: item.lng == null ? null : Number(item.lng),
+    confirm_count: 0
   }));
 
   renderVisibleItems();
@@ -548,9 +593,21 @@ function attachEvents() {
   closeAddBtn.addEventListener('click', closeAddModal);
   modalBackdrop.addEventListener('click', closeAddModal);
 
+  if (detailCloseBtn) {
+    detailCloseBtn.addEventListener('click', closeDetailModal);
+  }
+
+  if (detailBackdrop) {
+    detailBackdrop.addEventListener('click', closeDetailModal);
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !addModal.hidden) {
       closeAddModal();
+    }
+
+    if (event.key === 'Escape' && !detailModal.hidden) {
+      closeDetailModal();
     }
   });
 
@@ -575,6 +632,24 @@ function attachEvents() {
   });
 
   document.getElementById('title').addEventListener('input', refreshDraftMarkerLabel);
+
+  if (detailStillBtn) {
+    detailStillBtn.addEventListener('click', () => {
+      console.log('still there clicked', activeDetailItem);
+    });
+  }
+
+  if (detailGoneBtn) {
+    detailGoneBtn.addEventListener('click', () => {
+      console.log('gone clicked', activeDetailItem);
+    });
+  }
+
+  if (detailReportBtn) {
+    detailReportBtn.addEventListener('click', () => {
+      console.log('report clicked', activeDetailItem);
+    });
+  }
 }
 
 async function init() {
