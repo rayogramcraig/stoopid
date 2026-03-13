@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>reThing</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./styles.css" />
@@ -24,19 +21,8 @@
 
     <div class="floating-controls">
       <div class="search-row">
-        <input
-          id="map-search"
-          class="search-input"
-          type="text"
-          placeholder="search"
-          autocomplete="off"
-        />
-        <button
-          id="open-add-btn"
-          class="map-add-btn"
-          type="button"
-          aria-label="Add item"
-        >
+        <input id="map-search" class="search-input" type="text" placeholder="search" autocomplete="off" />
+        <button id="open-add-btn" class="map-add-btn" type="button" aria-label="Add item">
           <span>+</span>
         </button>
       </div>
@@ -51,57 +37,28 @@
     <div id="add-modal" class="add-flow" hidden>
       <div id="modal-backdrop" class="add-flow__backdrop"></div>
 
-      <section
-        class="add-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-item-title"
-      >
-        <div class="add-photo-frame" id="add-photo-frame">
-          <img
-            id="add-photo-image"
-            class="add-photo-image"
-            alt="Selected item"
-            hidden
-          />
+      <section class="add-card" role="dialog" aria-modal="true" aria-labelledby="add-item-title">
+        <div class="add-photo-frame">
+          <img id="add-photo-image" class="add-photo-image" alt="Selected item" hidden />
           <div class="add-photo-empty" id="add-photo-empty">
             <div class="add-photo-empty__label">Opening camera…</div>
           </div>
           <div class="add-photo-shade"></div>
 
-          <button
-            id="retake-photo-btn"
-            class="retake-photo-btn"
-            type="button"
-            hidden
-          >
-            retake photo
-          </button>
+          <button id="retake-photo-btn" class="retake-photo-btn" type="button" hidden>retake photo</button>
 
           <div class="add-fields">
             <h1 id="add-item-title" class="sr-only">Add item</h1>
 
-            <button
-              id="pick-title-btn"
-              class="add-line-btn"
-              type="button"
-            >
+            <button id="pick-title-btn" class="add-line-btn" type="button">
               <span id="pick-title-value" class="add-line-btn__text is-placeholder">What is it?</span>
             </button>
 
-            <button
-              id="pick-color-btn"
-              class="add-line-btn"
-              type="button"
-            >
+            <button id="pick-color-btn" class="add-line-btn" type="button">
               <span id="pick-color-value" class="add-line-btn__text is-placeholder">Color</span>
             </button>
 
-            <button
-              id="pick-condition-btn"
-              class="add-line-btn"
-              type="button"
-            >
+            <button id="pick-condition-btn" class="add-line-btn" type="button">
               <span id="pick-condition-value" class="add-line-btn__text is-placeholder">Condition</span>
             </button>
           </div>
@@ -110,22 +67,8 @@
         <div class="add-status" id="form-status"></div>
 
         <div class="add-bottom-bar">
-          <button
-            id="close-add-btn"
-            class="ghost-close-btn"
-            type="button"
-            aria-label="Close add item"
-          >
-            ×
-          </button>
-
-          <button
-            id="submit-add-btn"
-            class="submit-add-btn is-disabled"
-            type="button"
-            aria-label="Post item"
-            disabled
-          >
+          <button id="close-add-btn" class="ghost-close-btn" type="button" aria-label="Close add item">×</button>
+          <button id="submit-add-btn" class="submit-add-btn is-disabled" type="button" aria-label="Post item" disabled>
             <span>+</span>
           </button>
         </div>
@@ -136,83 +79,61 @@
           <input id="condition" name="condition" type="text" autocomplete="off" />
           <input id="lat" name="lat" type="text" readonly />
           <input id="lng" name="lng" type="text" readonly />
-          <input
-            id="photo"
-            name="photo"
-            type="file"
-            accept="image/*"
-            capture="environment"
-          />
+          <input id="photo" name="photo" type="file" accept="image/*" capture="environment" />
         </form>
       </section>
 
       <section id="picker-sheet" class="picker-sheet" hidden>
         <div class="picker-sheet__panel">
           <div id="picker-search-wrap" class="picker-sheet__search">
-            <input
-              id="picker-search-input"
-              class="picker-sheet__search-input"
-              type="text"
-              autocomplete="off"
-              spellcheck="false"
-            />
+            <input id="picker-search-input" class="picker-sheet__search-input" type="text" autocomplete="off" spellcheck="false" />
           </div>
-
           <div id="picker-options" class="picker-sheet__options"></div>
         </div>
       </section>
     </div>
-  </div>
 
     <div id="detail-modal" class="detail-modal" hidden>
       <div id="detail-backdrop" class="detail-modal__backdrop"></div>
 
-      <section
-        class="detail-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="detail-title"
-      >
-        <button
-          id="detail-close-btn"
-          class="detail-close-btn"
-          type="button"
-          aria-label="Close detail"
-        >
-          ×
-        </button>
-
-        <div class="detail-media-wrap">
+      <section class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+        <div class="detail-hero">
           <img id="detail-image" class="detail-image" alt="" />
-          <div class="detail-image-placeholder" id="detail-image-placeholder">No photo</div>
+          <div id="detail-image-placeholder" class="detail-image-placeholder">No photo</div>
+
+          <button id="detail-report-btn" class="detail-report-btn" type="button">
+            <span class="detail-report-btn__icon">⚠</span>
+            <span>report</span>
+          </button>
+
+          <button id="detail-close-btn" class="detail-close-btn" type="button" aria-label="Close detail">×</button>
         </div>
 
-        <div class="detail-body">
-          <h2 id="detail-title" class="detail-title">item</h2>
+        <div class="detail-panel">
+          <div class="detail-line-block">
+            <div id="detail-title" class="detail-line-value">item</div>
+            <div class="detail-line-rule"></div>
+          </div>
 
-          <div class="detail-meta">
-            <div class="detail-meta__row">
-              <span class="detail-meta__label">Color</span>
-              <span id="detail-color" class="detail-meta__value">Unknown</span>
-            </div>
-            <div class="detail-meta__row">
-              <span class="detail-meta__label">Condition</span>
-              <span id="detail-condition" class="detail-meta__value">Unknown</span>
-            </div>
-            <div class="detail-meta__row">
-              <span class="detail-meta__label">Confirmed</span>
-              <span id="detail-count" class="detail-meta__value">0</span>
-            </div>
+          <div class="detail-line-block">
+            <div id="detail-color" class="detail-line-value">Unknown</div>
+            <div class="detail-line-rule"></div>
+          </div>
+
+          <div class="detail-line-block">
+            <div id="detail-condition" class="detail-line-value">Unknown</div>
+            <div class="detail-line-rule"></div>
           </div>
 
           <div class="detail-actions">
-            <button id="detail-still-btn" class="detail-action-btn" type="button">still there</button>
-            <button id="detail-gone-btn" class="detail-action-btn" type="button">gone</button>
-            <button id="detail-report-btn" class="detail-action-btn detail-action-btn--ghost" type="button">report</button>
+            <button id="detail-still-btn" class="detail-action-btn detail-action-btn--green" type="button">still there</button>
+            <div class="detail-count-bubble" id="detail-count">0</div>
+            <button id="detail-gone-btn" class="detail-action-btn detail-action-btn--red" type="button">gone</button>
           </div>
         </div>
       </section>
     </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
