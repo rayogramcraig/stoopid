@@ -355,7 +355,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .detail-hero {
   position: relative;
-  height: 64%;
+  height: 58%;
   background: #bfb8aa;
 }
 .detail-image-placeholder {
@@ -410,7 +410,7 @@ button { -webkit-tap-highlight-color: transparent; }
   left: 0;
   right: 0;
   bottom: 0;
-  height: 36%;
+  height: 38%;
   background: #000;
   padding: 28px 46px 36px;
   display: flex;
@@ -530,7 +530,7 @@ button { -webkit-tap-highlight-color: transparent; }
   .filter-btn { min-width: 0; height: 31px; font-size: 18px; padding: 0 24px; }
   .add-card, .detail-card {
     width: calc(100vw - 56px);
-        height: calc(100vh - 70px);
+        height: calc(100vh - 90px);
     border-radius: 34px;
   }
   .add-fields { top: 96px; left: 28px; right: 28px; gap: 40px; }
@@ -564,14 +564,16 @@ button { -webkit-tap-highlight-color: transparent; }
     font-size: 24px;
   }
   .detail-close-btn {
-    top: 16px;
-    right: 16px;
-    width: 54px;
-    height: 54px;
-    font-size: 38px;
+	  top: 16px;
+      right: 16px;
+      width: 39px;
+      height: 39px;
+      font-size: 38px;
+      opacity: .5;
+			  
   }
   .detail-panel {
-    padding: 22px 24px 26px;
+    padding: 4px 24px 26px;
   }
   .detail-line-value { font-size: 24px; }
   .detail-line-rule { margin-top: 10px; height: 2px; }
