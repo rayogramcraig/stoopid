@@ -104,7 +104,7 @@ button { -webkit-tap-highlight-color: transparent; }
     backdrop-filter: blur(6px);
     cursor: pointer;
 }
-n.is-locating {
+.here-btn.is-locating {
   min-width: 96px;
 }
 .here-btn:disabled {
@@ -553,9 +553,13 @@ n.is-locating {
   .floating-topbar { top: 12px; left: 12px; right: 12px; }
   .top-left-controls { gap: 8px; }
   .here-btn {
-      height: 37px;
-      padding: 0 11px;
-      font-size: 12px;
+      height: 44px;
+      min-width: 88px;
+      padding: 0 16px;
+      font-size: 16px;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
   }
   .floating-controls { left: 12px; right: 12px; bottom: 94px; gap: 12px; }
   .search-input { height: 47px; font-size: 18px; padding: 0 22px; }

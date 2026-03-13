@@ -12,6 +12,7 @@ const lngInput = document.getElementById('lng');
 const photoInput = document.getElementById('photo');
 
 const openAddBtn = document.getElementById('open-add-btn');
+const hereBtn = document.getElementById('here-btn');
 const closeAddBtn = document.getElementById('close-add-btn');
 const submitAddBtn = document.getElementById('submit-add-btn');
 const addModal = document.getElementById('add-modal');
@@ -225,6 +226,54 @@ async function useCurrentLocation(options = {}) {
       if (!silent && formStatus) formStatus.textContent = `Location failed: ${error.message}`;
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+
+function resetHereButton() {
+  if (!hereBtn) return;
+  hereBtn.disabled = false;
+  hereBtn.classList.remove('is-locating');
+  hereBtn.textContent = 'HERE';
+}
+
+function moveMapToCurrentLocation() {
+  if (!navigator.geolocation) {
+    if (userPill) userPill.textContent = 'Location unavailable';
+    return;
+  }
+
+  if (hereBtn) {
+    hereBtn.disabled = true;
+    hereBtn.classList.add('is-locating');
+    hereBtn.textContent = '...';
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      if (!userMarker) {
+        userMarker = L.marker([lat, lng], { icon: createLabeledIcon('you', ' is-user') }).addTo(map);
+      } else {
+        userMarker.setLatLng([lat, lng]);
+      }
+
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 16), {
+        animate: true,
+        duration: 0.75
+      });
+
+      resetHereButton();
+    },
+    (error) => {
+      console.error('HERE button location failed:', error);
+      resetHereButton();
+      if (userPill) userPill.textContent = 'Location blocked';
+      setTimeout(() => renderUser(), 1800);
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
   );
 }
 
@@ -546,6 +595,14 @@ async function handleSubmit() {
 }
 
 function attachEvents() {
+  if (hereBtn) {
+    hereBtn.addEventListener('click', moveMapToCurrentLocation);
+    hereBtn.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      moveMapToCurrentLocation();
+    }, { passive: false });
+  }
+
   openAddBtn.addEventListener('click', openAddModal);
   closeAddBtn.addEventListener('click', closeAddModal);
   modalBackdrop.addEventListener('click', closeAddModal);
