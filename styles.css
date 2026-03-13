@@ -126,7 +126,7 @@ button { -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 .filter-row {
-  justify-content: flex-start;
+    justify-content: space-evenly;
   align-items: center;
 }
 .filter-btn {
@@ -522,9 +522,9 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 @media (max-width: 700px) {
   .floating-topbar { top: 12px; left: 12px; right: 12px; }
-  .floating-controls { left: 12px; right: 12px; bottom: 54px; gap: 12px; }
-  .search-input { height: 64px; font-size: 26px; padding: 0 22px; }
-  .map-add-btn { width: 98px; height: 64px; font-size: 48px; }
+  .floating-controls { left: 12px; right: 12px; bottom: 94px; gap: 12px; }
+  .search-input { height: 47px; font-size: 18px; padding: 0 22px; }
+  .map-add-btn { width: 98px; height: 47px; font-size: 42px; }
   .filter-btn { min-width: 0; height: 31px; font-size: 18px; padding: 0 24px; }
   .add-card, .detail-card {
     width: calc(100vw - 56px);
