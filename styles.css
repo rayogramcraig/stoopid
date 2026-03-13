@@ -204,6 +204,7 @@ button { -webkit-tap-highlight-color: transparent; }
   font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.03em;
+  display: none;
 }
 .retake-photo-btn {
   position: absolute;
@@ -266,7 +267,7 @@ button { -webkit-tap-highlight-color: transparent; }
   z-index: 4;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 166px;
 }
 .ghost-close-btn {
   width: 68px;
@@ -365,6 +366,7 @@ button { -webkit-tap-highlight-color: transparent; }
   color: rgba(255,255,255,0.88);
   font-size: 28px;
   font-weight: 700;
+  display: none;
 }
 .detail-report-btn {
   position: absolute;
@@ -528,15 +530,28 @@ button { -webkit-tap-highlight-color: transparent; }
   .filter-btn { min-width: 0; height: 31px; font-size: 18px; padding: 0 24px; }
   .add-card, .detail-card {
     width: calc(100vw - 56px);
-    height: calc(100vh - 140px);
+        height: calc(100vh - 70px);
     border-radius: 34px;
   }
   .add-fields { top: 96px; left: 28px; right: 28px; gap: 40px; }
   .add-line-btn { border-bottom-width: 7px; padding-bottom: 8px; }
   .add-line-btn__text { font-size: 28px; }
-  .add-status { left: 28px; right: 28px; bottom: 124px; font-size: 15px; }
-  .submit-add-btn { width: 156px; height: 78px; font-size: 74px; }
-  .ghost-close-btn { width: 58px; height: 58px; font-size: 34px; }
+  .add-status {
+        left: 28px;
+        right: 28px;
+        bottom: 124px;
+        font-size: 15px;
+        justify-self: center;
+        background-color: #434141;
+        padding: 10px 20px 10px 20px;
+        border-radius: 30px;
+    }
+  .submit-add-btn { width: 86px; height: 78px; font-size: 74px; }
+  .ghost-close-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 34px;
+    }
   .picker-sheet { padding: 16px; }
   .picker-sheet__panel { width: calc(100vw - 92px); max-height: calc(100vh - 180px); padding: 16px; }
   .picker-sheet__search-input { font-size: 28px; border-bottom-width: 7px; }
