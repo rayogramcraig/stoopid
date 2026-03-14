@@ -160,6 +160,10 @@ async function ensureAnonymousSession() {
   }
 }
 
+function getItemStatus(item) {
+  return Number(item.confirm_count ?? 0) > 0 ? 'verified' : 'new';
+}
+
 function createLabeledIcon(label, variant = '') {
   const safeLabel = escapeHtml((label || 'item').trim().toLowerCase());
   const variantClass = variant ? ` ${variant}` : '';
@@ -291,28 +295,28 @@ function applyFilters(items) {
 
   if (currentSearch) {
     const q = currentSearch.toLowerCase();
-    filtered = filtered.filter((item) => [item.title || '', item.color || '', item.condition || ''].some((value) => value.toLowerCase().includes(q)));
+    filtered = filtered.filter((item) =>
+      [item.title || '', item.color || '', item.condition || '']
+        .some((value) => value.toLowerCase().includes(q))
+    );
   }
 
   if (currentFilter === 'new') {
-    const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
-    filtered = filtered.filter((item) => {
-      const created = item.created_at ? new Date(item.created_at).getTime() : 0;
-      return created >= twoDaysAgo;
-    });
+    filtered = filtered.filter((item) => getItemStatus(item) === 'new');
   }
 
   if (currentFilter === 'verified') {
-    filtered = filtered.filter((item) => Number(item.confirm_count ?? 0) > 0);
+    filtered = filtered.filter((item) => getItemStatus(item) === 'verified');
   }
 
   return filtered;
 }
 
 function updateFilterButtons() {
-  filterAllBtn.classList.toggle('is-active', currentFilter === 'all');
-  filterNewBtn.classList.toggle('is-active', currentFilter === 'new');
-  filterVerifiedBtn.classList.toggle('is-active', currentFilter === 'verified');
+  const isAll = currentFilter === 'all';
+  filterAllBtn.classList.toggle('is-active', isAll);
+  filterNewBtn.classList.toggle('is-active', isAll || currentFilter === 'new');
+  filterVerifiedBtn.classList.toggle('is-active', isAll || currentFilter === 'verified');
 }
 
 function syncDetailVerifyState() {
@@ -365,7 +369,11 @@ function updateMapMarkers(items) {
       return;
     }
 
-    const marker = L.marker([item.lat, item.lng], { icon: createLabeledIcon(item.title || 'item') });
+    const statusClass = getItemStatus(item) === 'verified' ? ' is-verified' : ' is-new';
+    const marker = L.marker([item.lat, item.lng], {
+      icon: createLabeledIcon(item.title || 'item', statusClass)
+    });
+
     marker.on('click', () => openDetailModal(item));
     marker.addTo(itemsLayer);
     markersById.set(item.id, marker);
@@ -693,7 +701,10 @@ async function handleStillThere() {
     confirm_count: nextCount
   };
 
-  allItems = allItems.map((item) => item.id === activeDetailItem.id ? { ...item, confirm_count: nextCount } : item);
+  allItems = allItems.map((item) =>
+    item.id === activeDetailItem.id ? { ...item, confirm_count: nextCount } : item
+  );
+
   if (detailCount) detailCount.textContent = String(nextCount);
   syncDetailVerifyState();
   renderVisibleItems();
@@ -751,16 +762,19 @@ function attachEvents() {
     currentSearch = event.target.value.trim();
     renderVisibleItems();
   });
+
   filterAllBtn.addEventListener('click', () => {
     currentFilter = 'all';
     renderVisibleItems();
   });
+
   filterNewBtn.addEventListener('click', () => {
-    currentFilter = 'new';
+    currentFilter = currentFilter === 'new' ? 'all' : 'new';
     renderVisibleItems();
   });
+
   filterVerifiedBtn.addEventListener('click', () => {
-    currentFilter = 'verified';
+    currentFilter = currentFilter === 'verified' ? 'all' : 'verified';
     renderVisibleItems();
   });
 
