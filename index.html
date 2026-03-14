@@ -118,7 +118,7 @@
     <div id="detail-modal" class="detail-modal" hidden>
       <div id="detail-backdrop" class="detail-modal__backdrop"></div>
 
-      <section class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <section id="detail-card" class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
         <div class="detail-hero">
           <img id="detail-image" class="detail-image" alt="" />
           <div id="detail-image-placeholder" class="detail-image-placeholder">No photo</div>
@@ -129,6 +129,11 @@
           </button>
 
           <button id="detail-close-btn" class="detail-close-btn" type="button" aria-label="Close detail">×</button>
+
+          <div id="detail-hero-state" class="detail-hero-state" hidden>
+            <div id="detail-hero-state-text" class="detail-hero-state-text">reported gone</div>
+            <button id="detail-hero-still-btn" class="detail-hero-still-btn" type="button">still there?</button>
+          </div>
         </div>
 
         <div class="detail-panel">
@@ -148,9 +153,9 @@
           </div>
 
           <div class="detail-actions">
-            <button id="detail-still-btn" class="detail-action-btn detail-action-btn--green" type="button">still there?</button>
+            <button id="detail-still-btn" class="detail-action-btn detail-action-btn--green detail-action-btn--outline-green" type="button">still there</button>
             <div class="detail-count-bubble" id="detail-count">0</div>
-            <button id="detail-gone-btn" class="detail-action-btn detail-action-btn--red" type="button">gone?</button>
+            <button id="detail-gone-btn" class="detail-action-btn detail-action-btn--outline-red" type="button">gone</button>
           </div>
         </div>
       </section>

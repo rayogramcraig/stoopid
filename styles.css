@@ -280,8 +280,8 @@ button {
 }
 
 .filter-row {
-    justify-content: center;
-    padding-top: 10px;
+  justify-content: center;
+  padding-top: 10px;
 }
 
 .filter-btn {
@@ -343,6 +343,14 @@ button {
 
 .detail-modal {
   z-index: 3200;
+}
+
+.detail-hero-state[hidden] {
+  display: none !important;
+}
+
+.detail-hero-still-btn[hidden] {
+  display: none !important;
 }
 
 .add-flow__backdrop,
@@ -585,10 +593,22 @@ button {
   background: #000;
 }
 
+.detail-card.is-gone .detail-panel {
+  background: #000;
+}
+
 .detail-hero {
   position: relative;
   height: 58%;
-  background: #bfb8aa;
+    background: #32060d;
+}
+
+.detail-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.08) 36%, rgba(0,0,0,0.52) 100%);
+  pointer-events: none;
 }
 
 .detail-image-placeholder {
@@ -642,6 +662,48 @@ button {
   cursor: pointer;
 }
 
+.detail-hero-state {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.detail-hero-state-text {
+  color: #eef181;
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  text-align: center;
+  text-transform: lowercase;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.detail-hero-still-btn {
+  height: 72px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 999px;
+  background: #139f2f;
+  color: #eef181;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+}
+
+.detail-hero-still-btn:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
 .detail-panel {
   position: absolute;
   left: 0;
@@ -692,21 +754,48 @@ button {
 
 .detail-action-btn {
   height: 78px;
-  border: 0;
   border-radius: 999px;
   font-size: 34px;
   font-weight: 700;
   letter-spacing: -0.04em;
   cursor: pointer;
-  color: #eef181;
+  text-transform: lowercase;
 }
 
 .detail-action-btn--green {
   background: #139f2f;
+  color: #eef181;
+  border: 0;
 }
 
 .detail-action-btn--red {
   background: #ff170d;
+  color: #eef181;
+  border: 0;
+}
+
+.detail-action-btn--outline-green {
+  background: transparent;
+  color: #0d922f;
+  border: 2px solid #0d922f;
+}
+
+.detail-action-btn--outline-red {
+  background: transparent;
+  color: #ff170d;
+  border: 2px solid #ff170d;
+}
+
+.detail-action-btn.is-active-red {
+  background: #ff170d;
+  color: #eef181;
+  border-color: #ff170d;
+}
+
+.detail-action-btn.is-active-green {
+  background: #139f2f;
+  color: #eef181;
+  border-color: #139f2f;
 }
 
 .detail-action-btn:disabled {
@@ -717,7 +806,7 @@ button {
 
 .detail-count-bubble {
   position: absolute;
-  left: 45%;
+  left: 25%;
   top: -11px;
   transform: translateX(-50%);
   width: 50px;
@@ -744,6 +833,7 @@ button {
   padding: 0 18px 0 12px;
   border-radius: 999px;
   background: #0d922f;
+  border: 2px solid transparent;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
   white-space: nowrap;
 }
@@ -755,6 +845,7 @@ button {
   flex: 0 0 28px;
   border-radius: 50%;
   background: var(--chip-dot);
+  border: 2px solid transparent;
 }
 
 .map-chip__dot::after {
@@ -788,6 +879,29 @@ button {
 
 .map-chip.is-verified .map-chip__dot::after {
   background: #0d922f;
+}
+
+.map-chip.is-gone {
+  background: rgba(255,255,255,0);
+  border-color: #111;
+  box-shadow: none;
+  opacity: .5;
+  
+  
+  
+}
+
+.map-chip.is-gone .map-chip__dot {
+  background: transparent;
+  border-color: #111;
+}
+
+.map-chip.is-gone .map-chip__dot::after {
+  background: #111;
+}
+
+.map-chip.is-gone .map-chip__label {
+  color: #111;
 }
 
 .map-chip.is-draft {
@@ -869,7 +983,7 @@ button {
     width: calc(100vw - 56px);
     height: calc(100vh - 120px);
     bottom: 30px;
-        top: 40px;
+    top: 40px;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 34px;
@@ -952,6 +1066,26 @@ button {
     height: 43px;
     font-size: 34px;
     opacity: 0.5;
+  }
+
+  .detail-hero-state {
+        top: 42%;
+        gap: 14px;
+        background-color: #7c0101c9;
+        padding: 81px;
+        width: 131%;
+        border-radius: 20px;
+        align-content: start;
+        rotate: -7deg;
+    }
+  .detail-hero-state-text {
+    font-size: 24px;
+  }
+
+  .detail-hero-still-btn {
+    height: 40px;
+    padding: 0 18px;
+    font-size: 21px;
   }
 
   .detail-panel {

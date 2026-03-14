@@ -45,6 +45,7 @@ const filterVerifiedBtn = document.getElementById('filter-verified-btn');
 
 const detailModal = document.getElementById('detail-modal');
 const detailBackdrop = document.getElementById('detail-backdrop');
+const detailCard = document.getElementById('detail-card');
 const detailCloseBtn = document.getElementById('detail-close-btn');
 const detailImage = document.getElementById('detail-image');
 const detailImagePlaceholder = document.getElementById('detail-image-placeholder');
@@ -55,6 +56,9 @@ const detailCount = document.getElementById('detail-count');
 const detailStillBtn = document.getElementById('detail-still-btn');
 const detailGoneBtn = document.getElementById('detail-gone-btn');
 const detailReportBtn = document.getElementById('detail-report-btn');
+const detailHeroState = document.getElementById('detail-hero-state');
+const detailHeroStateText = document.getElementById('detail-hero-state-text');
+const detailHeroStillBtn = document.getElementById('detail-hero-still-btn');
 
 let currentUser = null;
 let map = null;
@@ -70,9 +74,12 @@ let photoPreviewUrl = null;
 let activeDetailItem = null;
 let verifiedItemIds = new Set();
 let itemsSubscription = null;
+let expirationRefreshTimer = null;
 
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
 const OBJECT_LIST = [
   'air conditioner','armchair','art','bar stool','beach chair','bench','bike','bookcase','bookshelf','cabinet','camping chair','chair','coffee table','couch','crate','desk','desk chair','dining chair','dining table','door','dresser','fan','folding chair','frame','headboard','heater','lamp','lawn chair','lounge chair','mattress','media console','mirror','nightstand','office chair','ottoman','patio chair','planter','plant','rocking chair','rug','shelf','side table','sofa','stool','storage bin','swivel chair','table','tv','tv stand','wheel chair','window'
@@ -91,7 +98,6 @@ function escapeHtml(str = '') {
     .replaceAll("'", '&#039;');
 }
 
-// Resize and compress image before upload
 async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
   if (!file) return null;
 
@@ -213,7 +219,37 @@ async function ensureAnonymousSession() {
   }
 }
 
+function parseDateMs(value) {
+  const ms = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function fallbackExpiresAt(item) {
+  const createdMs = parseDateMs(item.created_at);
+  if (!createdMs) return null;
+  return new Date(createdMs + ONE_WEEK_MS).toISOString();
+}
+
+function normalizeItem(item) {
+  return {
+    ...item,
+    lat: item.lat == null ? null : Number(item.lat),
+    lng: item.lng == null ? null : Number(item.lng),
+    confirm_count: Number(item.confirm_count ?? 0),
+    gone_reported: Boolean(item.gone_reported),
+    expires_at: item.expires_at || fallbackExpiresAt(item)
+  };
+}
+
+function isItemExpired(item) {
+  const expiresMs = parseDateMs(item.expires_at);
+  if (!expiresMs) return false;
+  return expiresMs <= Date.now();
+}
+
 function getItemStatus(item) {
+  if (isItemExpired(item)) return 'expired';
+  if (item.gone_reported) return 'gone';
   return Number(item.confirm_count ?? 0) > 0 ? 'verified' : 'new';
 }
 
@@ -343,8 +379,12 @@ function moveMapToCurrentLocation() {
   );
 }
 
+function getUnexpiredItems(items) {
+  return items.filter((item) => !isItemExpired(item));
+}
+
 function applyFilters(items) {
-  let filtered = [...items];
+  let filtered = [...getUnexpiredItems(items)];
 
   if (currentSearch) {
     const q = currentSearch.toLowerCase();
@@ -373,10 +413,30 @@ function updateFilterButtons() {
 }
 
 function syncDetailVerifyState() {
-  if (!detailStillBtn || !activeDetailItem) return;
+  if (!activeDetailItem) return;
+
+  const isGone = activeDetailItem.gone_reported;
   const alreadyVerified = verifiedItemIds.has(activeDetailItem.id);
-  detailStillBtn.disabled = alreadyVerified;
-  detailStillBtn.textContent = alreadyVerified ? 'verified' : 'still there?';
+  const disableStill = alreadyVerified && !isGone;
+
+  detailStillBtn.disabled = disableStill;
+  detailHeroStillBtn.disabled = false;
+
+  detailStillBtn.textContent = disableStill ? 'verified' : 'still there';
+  detailHeroStillBtn.textContent = 'still there?';
+
+  detailGoneBtn.classList.toggle('is-active-red', isGone);
+  detailStillBtn.classList.toggle('is-active-green', !disableStill && !isGone);
+
+  detailCard.classList.toggle('is-gone', isGone);
+
+  detailHeroState.hidden = !isGone;
+  detailHeroStillBtn.hidden = !isGone;
+  detailHeroStateText.textContent = isGone ? 'reported gone' : '';
+
+  if (isGone) {
+    detailStillBtn.disabled = false;
+  }
 }
 
 function openDetailModal(item) {
@@ -406,10 +466,21 @@ function openDetailModal(item) {
 function closeDetailModal() {
   detailModal.hidden = true;
   activeDetailItem = null;
-  if (detailStillBtn) {
-    detailStillBtn.disabled = false;
-    detailStillBtn.textContent = 'still there?';
-  }
+  detailCard.classList.remove('is-gone');
+  detailHeroState.hidden = true;
+  detailStillBtn.disabled = false;
+  detailStillBtn.textContent = 'still there';
+  detailHeroStillBtn.disabled = false;
+  detailHeroStillBtn.textContent = 'still there?';
+  detailGoneBtn.classList.remove('is-active-red');
+  detailStillBtn.classList.remove('is-active-green');
+}
+
+function getMarkerVariantClass(item) {
+  const status = getItemStatus(item);
+  if (status === 'gone') return ' is-gone';
+  if (status === 'verified') return ' is-verified';
+  return ' is-new';
 }
 
 function updateMapMarkers(items) {
@@ -422,9 +493,8 @@ function updateMapMarkers(items) {
       return;
     }
 
-    const statusClass = getItemStatus(item) === 'verified' ? ' is-verified' : ' is-new';
     const marker = L.marker([item.lat, item.lng], {
-      icon: createLabeledIcon(item.title || 'item', statusClass)
+      icon: createLabeledIcon(item.title || 'item', getMarkerVariantClass(item))
     });
 
     marker.on('click', () => openDetailModal(item));
@@ -444,14 +514,18 @@ function updateMapMarkers(items) {
 
 function renderVisibleItems() {
   updateFilterButtons();
-  updateMapMarkers(applyFilters(allItems));
+  const visibleItems = applyFilters(allItems);
+  updateMapMarkers(visibleItems);
 
   if (activeDetailItem) {
     const freshItem = allItems.find((item) => item.id === activeDetailItem.id);
-    if (freshItem) {
-      activeDetailItem = freshItem;
-      if (!detailModal.hidden) openDetailModal(freshItem);
+    if (!freshItem || isItemExpired(freshItem)) {
+      closeDetailModal();
+      return;
     }
+
+    activeDetailItem = freshItem;
+    if (!detailModal.hidden) openDetailModal(freshItem);
   }
 }
 
@@ -477,23 +551,17 @@ async function loadItems() {
 
   const { data, error } = await sb
     .from('items')
-    .select('id, title, color, condition, created_at, is_available, image_url, lat, lng, confirm_count')
+    .select('id, title, color, condition, created_at, is_available, image_url, lat, lng, confirm_count, expires_at, gone_reported')
     .eq('is_available', true)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .limit(250);
 
   if (error) {
     console.error('loadItems failed:', error);
     return;
   }
 
-  allItems = (data || []).map((item) => ({
-    ...item,
-    lat: item.lat == null ? null : Number(item.lat),
-    lng: item.lng == null ? null : Number(item.lng),
-    confirm_count: Number(item.confirm_count ?? 0)
-  }));
-
+  allItems = (data || []).map(normalizeItem);
   renderVisibleItems();
 }
 
@@ -703,7 +771,9 @@ async function handleSubmit() {
     image_url: imageUrl,
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
-    confirm_count: 0
+    confirm_count: 0,
+    gone_reported: false,
+    expires_at: new Date(Date.now() + ONE_WEEK_MS).toISOString()
   };
 
   const { error } = await sb.from('items').insert([payload]);
@@ -721,13 +791,19 @@ async function handleSubmit() {
 
 async function handleStillThere() {
   if (!activeDetailItem || !currentUser) return;
-  if (verifiedItemIds.has(activeDetailItem.id)) {
+
+  const alreadyVerified = verifiedItemIds.has(activeDetailItem.id);
+  const wasGone = Boolean(activeDetailItem.gone_reported);
+
+  if (alreadyVerified && !wasGone) {
     syncDetailVerifyState();
     return;
   }
 
   detailStillBtn.disabled = true;
+  detailHeroStillBtn.disabled = true;
   detailStillBtn.textContent = 'saving…';
+  detailHeroStillBtn.textContent = 'saving…';
 
   const { data, error } = await sb.rpc('verify_item_still_there', {
     p_item_id: activeDetailItem.id,
@@ -737,30 +813,82 @@ async function handleStillThere() {
   if (error) {
     console.error('verify failed:', error);
 
-    if ((error.message || '').toLowerCase().includes('already verified')) {
-      verifiedItemIds.add(activeDetailItem.id);
-      syncDetailVerifyState();
-      return;
-    }
-
     detailStillBtn.disabled = false;
+    detailHeroStillBtn.disabled = false;
     detailStillBtn.textContent = 'try again';
+    detailHeroStillBtn.textContent = 'try again';
     return;
   }
 
-  verifiedItemIds.add(activeDetailItem.id);
+  if (!alreadyVerified) {
+    verifiedItemIds.add(activeDetailItem.id);
+  }
 
-  const nextCount = Number(data ?? (activeDetailItem.confirm_count ?? 0) + 1);
+  const result = data || {};
+  const nextCount = Number(
+    result.confirm_count ??
+    (alreadyVerified ? activeDetailItem.confirm_count ?? 0 : (activeDetailItem.confirm_count ?? 0) + 1)
+  );
+
+  const nextExpiresAt =
+    result.expires_at ||
+    new Date(
+      Math.max(parseDateMs(activeDetailItem.expires_at) || 0, Date.now()) + TWO_DAYS_MS
+    ).toISOString();
+
   activeDetailItem = {
     ...activeDetailItem,
-    confirm_count: nextCount
+    confirm_count: nextCount,
+    gone_reported: false,
+    expires_at: nextExpiresAt
   };
 
   allItems = allItems.map((item) =>
-    item.id === activeDetailItem.id ? { ...item, confirm_count: nextCount } : item
+    item.id === activeDetailItem.id
+      ? { ...item, confirm_count: nextCount, gone_reported: false, expires_at: nextExpiresAt }
+      : item
   );
 
   if (detailCount) detailCount.textContent = String(nextCount);
+  syncDetailVerifyState();
+  renderVisibleItems();
+}
+
+async function handleGone() {
+  if (!activeDetailItem || !currentUser) return;
+  if (activeDetailItem.gone_reported) {
+    syncDetailVerifyState();
+    return;
+  }
+
+  detailGoneBtn.disabled = true;
+  detailGoneBtn.textContent = 'saving…';
+
+  const { data, error } = await sb.rpc('mark_item_gone', {
+    p_item_id: activeDetailItem.id,
+    p_user_id: currentUser.id
+  });
+
+  if (error) {
+    console.error('mark gone failed:', error);
+    detailGoneBtn.disabled = false;
+    detailGoneBtn.textContent = 'try again';
+    return;
+  }
+
+  const nextGoneReported = Boolean(data?.gone_reported ?? true);
+
+  activeDetailItem = {
+    ...activeDetailItem,
+    gone_reported: nextGoneReported
+  };
+
+  allItems = allItems.map((item) =>
+    item.id === activeDetailItem.id ? { ...item, gone_reported: nextGoneReported } : item
+  );
+
+  detailGoneBtn.disabled = false;
+  detailGoneBtn.textContent = 'gone';
   syncDetailVerifyState();
   renderVisibleItems();
 }
@@ -800,11 +928,13 @@ function attachEvents() {
     if (!currentPicker) return;
     renderPickerOptions(currentPicker, pickerSearchInput.value);
   });
+
   pickerOptions.addEventListener('click', (event) => {
     const button = event.target.closest('[data-value]');
     if (!button) return;
     applyPickerValue(button.dataset.value || '');
   });
+
   pickerSheet.addEventListener('click', (event) => {
     if (event.target === pickerSheet) closePicker();
   });
@@ -837,9 +967,9 @@ function attachEvents() {
   detailBackdrop.addEventListener('click', closeDetailModal);
 
   detailStillBtn.addEventListener('click', handleStillThere);
-  detailGoneBtn.addEventListener('click', () => {
-    console.log('gone clicked', activeDetailItem);
-  });
+  detailHeroStillBtn.addEventListener('click', handleStillThere);
+  detailGoneBtn.addEventListener('click', handleGone);
+
   detailReportBtn.addEventListener('click', () => {
     console.log('report clicked', activeDetailItem);
   });
@@ -859,10 +989,21 @@ function attachEvents() {
   });
 }
 
+function startExpirationRefreshLoop() {
+  if (expirationRefreshTimer) {
+    clearInterval(expirationRefreshTimer);
+  }
+
+  expirationRefreshTimer = setInterval(() => {
+    renderVisibleItems();
+  }, 60 * 1000);
+}
+
 async function init() {
   initMap();
   attachEvents();
   resetAddForm();
+  startExpirationRefreshLoop();
 
   const signedIn = await ensureAnonymousSession();
   if (!signedIn) return;
