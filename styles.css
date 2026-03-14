@@ -775,17 +775,14 @@ button {
 }
 
 .detail-action-btn--outline-green {
-  background: transparent;
-  color: #0d922f;
-  border: 2px solid #0d922f;
+    background: #0d922f;
+    color: #ffffff;
 }
-
 .detail-action-btn--outline-red {
-  background: transparent;
-  color: #ff170d;
-  border: 2px solid #ff170d;
+    background: #ff190c;
+    color: #ffffff;
+    border: 2px solid #ff170d;
 }
-
 .detail-action-btn.is-active-red {
   background: #ff170d;
   color: #eef181;
@@ -806,7 +803,7 @@ button {
 
 .detail-count-bubble {
   position: absolute;
-  left: 25%;
+  left: 45%;
   top: -11px;
   transform: translateX(-50%);
   width: 50px;
