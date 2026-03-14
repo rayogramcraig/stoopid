@@ -1256,7 +1256,7 @@ button {
   margin: 0;
   font-size: clamp(1.55rem, 4.95vw, 2.3rem);
   line-height: 1.28;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.04em;
   color: #000000;
 }
@@ -1273,9 +1273,9 @@ button {
   border: 0;
   background: transparent;
   color: #ffffff;
-  font-size: clamp(1.2rem, 3.6vw, 1.95rem);
+  font-size: clamp(1.4rem, 3.6vw, 1.95rem);
   line-height: 1.26;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
   text-align: left;
   cursor: pointer;
@@ -1299,7 +1299,7 @@ button {
   }
 
   .install-splash__body {
-    font-size: clamp(1.1rem, 4.2vw, 1.72rem);
+    font-size: clamp(1.4rem, 4.2vw, 1.72rem);
     line-height: 1.34;
   }
 
