@@ -618,6 +618,10 @@ button { -webkit-tap-highlight-color: transparent; }
 .map-chip.is-user { background: #0a5c7d; }
 .leaflet-control-zoom { margin-top: 88px !important; }
 
+.leaflet-tile-pane {
+    filter: grayscale(80%) contrast(0.4) brightness(1.4);
+}
+
 @media (min-width: 900px) {
   .brand-wrap {
     display: block;
