@@ -319,7 +319,7 @@ function syncDetailVerifyState() {
   if (!detailStillBtn || !activeDetailItem) return;
   const alreadyVerified = verifiedItemIds.has(activeDetailItem.id);
   detailStillBtn.disabled = alreadyVerified;
-  detailStillBtn.textContent = alreadyVerified ? 'verified' : 'still there';
+  detailStillBtn.textContent = alreadyVerified ? 'verified' : 'still there?';
 }
 
 function openDetailModal(item) {
@@ -351,7 +351,7 @@ function closeDetailModal() {
   activeDetailItem = null;
   if (detailStillBtn) {
     detailStillBtn.disabled = false;
-    detailStillBtn.textContent = 'still there';
+    detailStillBtn.textContent = 'still there?';
   }
 }
 

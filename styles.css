@@ -486,14 +486,14 @@ button { -webkit-tap-highlight-color: transparent; }
   padding: 0 22px;
   border: 0;
   border-radius: 999px;
-  background: rgba(161, 88, 47, 0.86);
+background: rgb(161 88 47 / 35%);
   color: #eef181;
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
 }
 .detail-report-btn__icon {
-  font-size: 28px;
+  font-size: 21px;
   line-height: 1;
 }
 .detail-close-btn {
@@ -685,11 +685,12 @@ button { -webkit-tap-highlight-color: transparent; }
   .picker-sheet__search-input { font-size: 28px; border-bottom-width: 7px; }
   .picker-option { font-size: 24px; padding: 14px 24px; }
   .detail-report-btn {
-    top: 18px;
-    left: 18px;
-    height: 46px;
-    padding: 0 18px;
-    font-size: 24px;
+      top: 18px;
+      left: 18px;
+      height: 40px;
+      padding: 0 13px;
+      font-size: 18px;
+      border: 1px solid #ffffffa3;
   }
   .detail-close-btn {
     top: 16px;
