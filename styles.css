@@ -530,11 +530,11 @@ button {
 }
 
 .picker-sheet {
-  position: absolute;
-  inset: 0;
-  z-index: 3500;
-  display: grid;
-  place-items: center;
+    position: relative;
+    top: 50px;
+    z-index: 3500;
+    display: grid;
+    place-items: center;
   padding: 24px;
 }
 

@@ -652,8 +652,15 @@ function closePicker() {
 
 function renderPickerOptions(config, query = '') {
   let options = config.options;
+
   if (config.searchable) {
     const q = query.trim().toLowerCase();
+
+    if (config.requireQuery && !q) {
+      pickerOptions.innerHTML = '';
+      return;
+    }
+
     options = options.filter((item) => item.toLowerCase().includes(q));
   }
 
@@ -915,11 +922,21 @@ function attachEvents() {
   photoInput.addEventListener('change', handlePhotoPreview);
 
   pickTitleBtn.addEventListener('click', () => {
-    openPicker({ key: 'title', input: titleInput, options: OBJECT_LIST, searchable: true, placeholder: 'Chair', initialQuery: titleInput.value });
+    openPicker({
+      key: 'title',
+      input: titleInput,
+      options: OBJECT_LIST,
+      searchable: true,
+      requireQuery: true,
+      placeholder: 'Object',
+      initialQuery: titleInput.value
+    });
   });
+
   pickColorBtn.addEventListener('click', () => {
     openPicker({ key: 'color', input: colorInput, options: COLOR_LIST, searchable: true, placeholder: 'wood' });
   });
+
   pickConditionBtn.addEventListener('click', () => {
     openPicker({ key: 'condition', input: conditionInput, options: CONDITION_LIST, searchable: false, placeholder: '' });
   });
