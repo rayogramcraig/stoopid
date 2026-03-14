@@ -867,7 +867,11 @@ button {
   .add-card,
   .detail-card {
     width: calc(100vw - 56px);
-    height: calc(100vh - 90px);
+    height: calc(100vh - 120px);
+    bottom: 30px;
+    top: auto;
+    left: 50%;
+    transform: translateX(-50%);
     border-radius: 34px;
   }
 
