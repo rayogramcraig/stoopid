@@ -1,6 +1,8 @@
 const sb = window.supabaseClient;
 
 const userPill = document.getElementById('user-pill');
+const installSplash = document.getElementById('install-splash');
+const installContinueBtn = document.getElementById('install-continue-btn');
 const splashScreen = document.getElementById('splash-screen');
 const splashGoBtn = document.getElementById('splash-go-btn');
 
@@ -250,9 +252,35 @@ async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
   });
 }
 
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function showInstallSplash() {
+  if (!installSplash) return;
+  installSplash.hidden = false;
+  installSplash.classList.remove('is-hidden');
+}
+
+function dismissInstallSplash() {
+  if (!installSplash || installSplash.hidden || installSplash.classList.contains('is-hidden')) return;
+  installSplash.classList.add('is-hidden');
+}
+
 function dismissSplashScreen() {
   if (!splashScreen || splashScreen.classList.contains('is-hidden')) return;
   splashScreen.classList.add('is-hidden');
+}
+
+function configureLaunchSplash() {
+  if (isStandaloneMode()) {
+    if (installSplash) installSplash.hidden = true;
+    if (splashScreen) splashScreen.classList.remove('is-hidden');
+    return;
+  }
+
+  if (splashScreen) splashScreen.classList.add('is-hidden');
+  showInstallSplash();
 }
 
 function setAuthError(message = 'Auth error') {
@@ -1040,6 +1068,10 @@ function attachEvents() {
     splashGoBtn.addEventListener('click', dismissSplashScreen);
   }
 
+  if (installContinueBtn) {
+    installContinueBtn.addEventListener('click', dismissInstallSplash);
+  }
+
   if (hereBtn) {
     hereBtn.addEventListener('click', moveMapToCurrentLocation);
     hereBtn.addEventListener('touchend', (event) => {
@@ -1160,6 +1192,7 @@ function startExpirationRefreshLoop() {
 }
 
 async function init() {
+  configureLaunchSplash();
   initMap();
   attachEvents();
   resetAddForm();

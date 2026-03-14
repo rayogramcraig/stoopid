@@ -1162,3 +1162,148 @@ button {
     margin-bottom: 18px;
   }
 }
+
+/* Install-only browser splash */
+.install-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 5100;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  background: #dbc6a7;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 420ms ease, visibility 420ms ease;
+}
+
+.install-splash[hidden] {
+  display: none !important;
+}
+
+.install-splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.install-splash__bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to bottom, rgba(208, 237, 166, 0.54) 0%, rgba(232, 178, 142, 0.2) 46%, rgba(244, 123, 88, 0.58) 100%),
+    url('./splash-background.png');
+  background-size: cover;
+  background-position: center center;
+  transform: scale(1.02);
+}
+
+.install-splash__content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: max(8.8vh, 70px) max(9.4vw, 42px) max(8.6vh, 54px);
+}
+
+.install-splash__lockup {
+  margin-top: max(7vh, 36px);
+}
+
+.install-splash__brand {
+  margin: 0;
+  font-size: clamp(5.7rem, 14.8vw, 8.7rem);
+  line-height: 0.88;
+  font-weight: 300;
+  letter-spacing: -0.11em;
+  color: #ffffff;
+}
+
+.install-splash__brand-main {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.install-splash__brand-accent {
+  color: #eef181;
+  font-weight: 500;
+}
+
+.install-splash__tagline {
+  margin: 18px 0 0;
+  font-size: clamp(3.1rem, 9.5vw, 5.5rem);
+  line-height: 0.96;
+  font-weight: 600;
+  letter-spacing: -0.08em;
+  color: #eef181;
+}
+
+.install-splash__instructions {
+  margin-top: max(14vh, 96px);
+}
+
+.install-splash__title {
+  margin: 0 0 18px;
+  font-size: clamp(3rem, 10vw, 4.8rem);
+  line-height: 0.92;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: #ffffff;
+}
+
+.install-splash__body {
+  margin: 0;
+  font-size: clamp(1.55rem, 4.95vw, 2.3rem);
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #000000;
+}
+
+.install-splash__accent {
+  color: #eef181;
+}
+
+.install-splash__continue {
+  margin-top: auto;
+  margin-bottom: max(3vh, 12px);
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: clamp(1.2rem, 3.6vw, 1.95rem);
+  line-height: 1.26;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .install-splash__content {
+    padding: max(env(safe-area-inset-top), 44px) 21px max(env(safe-area-inset-bottom), 34px);
+  }
+
+  .install-splash__lockup {
+    margin-top: 7vh;
+  }
+
+  .install-splash__instructions {
+    margin-top: 14vh;
+  }
+
+  .install-splash__title {
+    font-size: clamp(2.8rem, 10.8vw, 4rem);
+  }
+
+  .install-splash__body {
+    font-size: clamp(1.1rem, 4.2vw, 1.72rem);
+    line-height: 1.34;
+  }
+
+  .install-splash__continue {
+    margin-bottom: 6vh;
+  }
+}
