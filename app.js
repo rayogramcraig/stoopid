@@ -91,6 +91,59 @@ function escapeHtml(str = '') {
     .replaceAll("'", '&#039;');
 }
 
+// Resize and compress image before upload
+async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
+  if (!file) return null;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error('Could not read image file.'));
+    img.onerror = () => reject(new Error('Could not load image for resizing.'));
+
+    reader.onload = (e) => {
+      img.src = e.target?.result;
+    };
+
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round(height * (maxWidth / width));
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not create image canvas.'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Could not compress image.'));
+            return;
+          }
+          resolve(blob);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 function dismissSplashScreen() {
   if (!splashScreen || splashScreen.classList.contains('is-hidden')) return;
   splashScreen.classList.add('is-hidden');
@@ -592,13 +645,15 @@ async function uploadPhoto(file) {
   if (!file || !file.size) return null;
   if (!currentUser) throw new Error('No authenticated user for upload.');
 
-  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const safeExtension = extension.replace(/[^a-z0-9]/g, '') || 'jpg';
-  const path = `${currentUser.id}/${crypto.randomUUID()}.${safeExtension}`;
+  const resizedBlob = await resizeImage(file, 1200, 0.8);
+  if (!resizedBlob) throw new Error('Could not prepare image for upload.');
 
-  const { error: uploadError } = await sb.storage.from('item-photos').upload(path, file, {
+  const path = `${currentUser.id}/${crypto.randomUUID()}.jpg`;
+
+  const { error: uploadError } = await sb.storage.from('item-photos').upload(path, resizedBlob, {
     cacheControl: '3600',
-    upsert: false
+    upsert: false,
+    contentType: 'image/jpeg'
   });
   if (uploadError) throw uploadError;
 
