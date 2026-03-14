@@ -869,7 +869,7 @@ button {
     width: calc(100vw - 56px);
     height: calc(100vh - 120px);
     bottom: 30px;
-    top: auto;
+        top: 40px;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 34px;
