@@ -242,7 +242,7 @@ function resetHereButton() {
   if (!hereBtn) return;
   hereBtn.disabled = false;
   hereBtn.classList.remove('is-locating');
-  hereBtn.textContent = 'HERE';
+  hereBtn.textContent = 'near you';
 }
 
 function moveMapToCurrentLocation() {
