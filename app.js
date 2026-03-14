@@ -80,6 +80,7 @@ const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+const MAX_CUSTOM_TITLE_LENGTH = 20;
 
 const OBJECT_LIST = [
   'air conditioner','armchair','art','bar stool','beach chair','bench','bike','bookcase','bookshelf','cabinet','camping chair','chair','coffee table','couch','crate','desk','desk chair','dining chair','dining table','door','dresser','fan','folding chair','frame','headboard','heater','lamp','lawn chair','lounge chair','mattress','media console','mirror','nightstand','office chair','ottoman','patio chair','planter','plant','rocking chair','rug','shelf','side table','sofa','stool','storage bin','swivel chair','table','tv','tv stand','wheel chair','window'
@@ -96,6 +97,25 @@ function escapeHtml(str = '') {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function normalizeCustomTitle(value = '') {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function isValidCustomTitle(value = '') {
+  const normalized = normalizeCustomTitle(value);
+  return normalized.length > 0 && normalized.length <= MAX_CUSTOM_TITLE_LENGTH;
+}
+
+function getTitleValidationMessage(value = '') {
+  const normalized = normalizeCustomTitle(value);
+
+  if (!normalized) return 'Type an object name.';
+  if (normalized.length > MAX_CUSTOM_TITLE_LENGTH) {
+    return `Keep object names under 21 characters.`;
+  }
+  return '';
 }
 
 async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
@@ -638,6 +658,7 @@ function openPicker(config) {
   if (config.searchable) {
     pickerSearchInput.value = config.initialQuery || config.input.value || '';
     pickerSearchInput.placeholder = config.placeholder || '';
+    pickerSearchInput.maxLength = config.maxLength || 200;
     renderPickerOptions(config, pickerSearchInput.value);
     setTimeout(() => pickerSearchInput.focus(), 20);
   } else {
@@ -652,9 +673,11 @@ function closePicker() {
 
 function renderPickerOptions(config, query = '') {
   let options = config.options;
+  let html = '';
+  const rawQuery = query || '';
 
   if (config.searchable) {
-    const q = query.trim().toLowerCase();
+    const q = rawQuery.trim().toLowerCase();
 
     if (config.requireQuery && !q) {
       pickerOptions.innerHTML = '';
@@ -662,17 +685,42 @@ function renderPickerOptions(config, query = '') {
     }
 
     options = options.filter((item) => item.toLowerCase().includes(q));
+
+    if (config.allowCustom) {
+      const normalizedCustom = normalizeCustomTitle(rawQuery);
+      const matchesExisting = config.options.some(
+        (item) => item.toLowerCase() === normalizedCustom
+      );
+
+      if (normalizedCustom && !matchesExisting) {
+        if (isValidCustomTitle(normalizedCustom)) {
+          html += `
+            <button class="picker-option picker-option--custom" type="button" data-custom-value="${escapeHtml(normalizedCustom)}">
+              use “${escapeHtml(normalizedCustom)}”
+            </button>
+          `;
+        } else {
+          html += `
+            <div class="picker-option" aria-disabled="true">
+              ${escapeHtml(getTitleValidationMessage(normalizedCustom))}
+            </div>
+          `;
+        }
+      }
+    }
   }
 
-  if (!options.length) {
+  if (!options.length && !html) {
     pickerOptions.innerHTML = '<div class="picker-option">No matches</div>';
     return;
   }
 
-  pickerOptions.innerHTML = options.map((item) => {
+  html += options.map((item) => {
     const isSelected = item.toLowerCase() === (config.input.value || '').trim().toLowerCase();
     return `<button class="picker-option${isSelected ? ' is-selected' : ''}" type="button" data-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`;
   }).join('');
+
+  pickerOptions.innerHTML = html;
 }
 
 function applyPickerValue(value) {
@@ -746,7 +794,14 @@ async function handleSubmit() {
     return;
   }
 
-  const title = titleInput.value.trim().toLowerCase() || 'item';
+  const normalizedTitle = normalizeCustomTitle(titleInput.value);
+
+  if (!isValidCustomTitle(normalizedTitle)) {
+    if (formStatus) formStatus.textContent = getTitleValidationMessage(normalizedTitle);
+    return;
+  }
+
+  const title = normalizedTitle || 'item';
   const color = colorInput.value.trim() || null;
   const condition = conditionInput.value.trim() || null;
   const photoFile = photoInput.files?.[0] || null;
@@ -928,6 +983,8 @@ function attachEvents() {
       options: OBJECT_LIST,
       searchable: true,
       requireQuery: true,
+      allowCustom: true,
+      maxLength: MAX_CUSTOM_TITLE_LENGTH,
       placeholder: 'Object',
       initialQuery: titleInput.value
     });
@@ -947,6 +1004,12 @@ function attachEvents() {
   });
 
   pickerOptions.addEventListener('click', (event) => {
+    const customButton = event.target.closest('[data-custom-value]');
+    if (customButton) {
+      applyPickerValue(customButton.dataset.customValue || '');
+      return;
+    }
+
     const button = event.target.closest('[data-value]');
     if (!button) return;
     applyPickerValue(button.dataset.value || '');
