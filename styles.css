@@ -292,10 +292,10 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .add-photo-shade {
-    position: absolute;
-    inset: 0;
-    background-color: #141e26eb;
-    pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-color: #141e26eb;
+  pointer-events: none;
 }
 .add-photo-empty {
   position: absolute;
@@ -562,6 +562,11 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .detail-action-btn--green { background: #139f2f; }
 .detail-action-btn--red { background: #ff170d; }
+.detail-action-btn:disabled {
+  opacity: 0.72;
+  cursor: default;
+  filter: saturate(0.7);
+}
 .detail-count-bubble {
   position: absolute;
   left: 45%;
@@ -620,7 +625,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .leaflet-control-zoom { margin-top: 88px !important; }
 
 .leaflet-tile-pane {
-    filter: grayscale(80%) contrast(0.4) brightness(1.4);
+  filter: grayscale(80%) contrast(0.4) brightness(1.4);
 }
 
 @media (min-width: 900px) {
@@ -668,12 +673,12 @@ button { -webkit-tap-highlight-color: transparent; }
     padding: 10px 20px 10px 20px;
     border-radius: 30px;
   }
-  .submit-add-btn { width: 86px; height: 78px; font-size: 73px;         padding: 0px 0px 10px 0px; }
+  .submit-add-btn { width: 86px; height: 78px; font-size: 73px; padding: 0px 0px 10px 0px; }
   .ghost-close-btn {
     width: 38px;
     height: 38px;
     font-size: 34px;
-	        padding: 0px 0px 3px 0px;
+    padding: 0px 0px 3px 0px;
   }
   .picker-sheet { padding: 16px; }
   .picker-sheet__panel { width: calc(100vw - 92px); max-height: calc(100vh - 180px); padding: 16px; }
@@ -687,13 +692,13 @@ button { -webkit-tap-highlight-color: transparent; }
     font-size: 24px;
   }
   .detail-close-btn {
-        top: 16px;
-        right: 16px;
-        width: 43px;
-        height: 43px;
-        font-size: 34px;
-        opacity: .5;
-    }
+    top: 16px;
+    right: 16px;
+    width: 43px;
+    height: 43px;
+    font-size: 34px;
+    opacity: .5;
+  }
   .detail-panel {
     padding: 4px 24px 26px;
   }

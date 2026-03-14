@@ -68,6 +68,8 @@ let currentSearch = '';
 let currentPicker = null;
 let photoPreviewUrl = null;
 let activeDetailItem = null;
+let verifiedItemIds = new Set();
+let itemsSubscription = null;
 
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
@@ -237,7 +239,6 @@ async function useCurrentLocation(options = {}) {
   );
 }
 
-
 function resetHereButton() {
   if (!hereBtn) return;
   hereBtn.disabled = false;
@@ -302,7 +303,7 @@ function applyFilters(items) {
   }
 
   if (currentFilter === 'verified') {
-    filtered = filtered.filter((item) => item.image_url);
+    filtered = filtered.filter((item) => Number(item.confirm_count ?? 0) > 0);
   }
 
   return filtered;
@@ -312,6 +313,13 @@ function updateFilterButtons() {
   filterAllBtn.classList.toggle('is-active', currentFilter === 'all');
   filterNewBtn.classList.toggle('is-active', currentFilter === 'new');
   filterVerifiedBtn.classList.toggle('is-active', currentFilter === 'verified');
+}
+
+function syncDetailVerifyState() {
+  if (!detailStillBtn || !activeDetailItem) return;
+  const alreadyVerified = verifiedItemIds.has(activeDetailItem.id);
+  detailStillBtn.disabled = alreadyVerified;
+  detailStillBtn.textContent = alreadyVerified ? 'verified' : 'still there';
 }
 
 function openDetailModal(item) {
@@ -334,12 +342,17 @@ function openDetailModal(item) {
   if (detailCondition) detailCondition.textContent = item.condition || 'Unknown';
   if (detailCount) detailCount.textContent = String(item.confirm_count ?? 0);
 
+  syncDetailVerifyState();
   detailModal.hidden = false;
 }
 
 function closeDetailModal() {
   detailModal.hidden = true;
   activeDetailItem = null;
+  if (detailStillBtn) {
+    detailStillBtn.disabled = false;
+    detailStillBtn.textContent = 'still there';
+  }
 }
 
 function updateMapMarkers(items) {
@@ -371,6 +384,31 @@ function updateMapMarkers(items) {
 function renderVisibleItems() {
   updateFilterButtons();
   updateMapMarkers(applyFilters(allItems));
+
+  if (activeDetailItem) {
+    const freshItem = allItems.find((item) => item.id === activeDetailItem.id);
+    if (freshItem) {
+      activeDetailItem = freshItem;
+      if (!detailModal.hidden) openDetailModal(freshItem);
+    }
+  }
+}
+
+async function loadVerifiedItemIds() {
+  if (!sb || !currentUser) return;
+
+  const { data, error } = await sb
+    .from('item_verifications')
+    .select('item_id')
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('loadVerifiedItemIds failed:', error);
+    return;
+  }
+
+  verifiedItemIds = new Set((data || []).map((row) => row.item_id));
+  if (activeDetailItem) syncDetailVerifyState();
 }
 
 async function loadItems() {
@@ -378,7 +416,7 @@ async function loadItems() {
 
   const { data, error } = await sb
     .from('items')
-    .select('id, title, color, condition, created_at, is_available, image_url, lat, lng')
+    .select('id, title, color, condition, created_at, is_available, image_url, lat, lng, confirm_count')
     .eq('is_available', true)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -392,10 +430,25 @@ async function loadItems() {
     ...item,
     lat: item.lat == null ? null : Number(item.lat),
     lng: item.lng == null ? null : Number(item.lng),
-    confirm_count: item.confirm_count ?? 0
+    confirm_count: Number(item.confirm_count ?? 0)
   }));
 
   renderVisibleItems();
+}
+
+function subscribeToItemChanges() {
+  if (!sb?.channel || itemsSubscription) return;
+
+  itemsSubscription = sb
+    .channel('public:items-live')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'items' },
+      async () => {
+        await loadItems();
+      }
+    )
+    .subscribe();
 }
 
 function resetPhotoPreview() {
@@ -586,7 +639,8 @@ async function handleSubmit() {
     is_available: true,
     image_url: imageUrl,
     lat: Number.isFinite(lat) ? lat : null,
-    lng: Number.isFinite(lng) ? lng : null
+    lng: Number.isFinite(lng) ? lng : null,
+    confirm_count: 0
   };
 
   const { error } = await sb.from('items').insert([payload]);
@@ -600,6 +654,49 @@ async function handleSubmit() {
   closeAddModal();
   resetAddForm();
   await loadItems();
+}
+
+async function handleStillThere() {
+  if (!activeDetailItem || !currentUser) return;
+  if (verifiedItemIds.has(activeDetailItem.id)) {
+    syncDetailVerifyState();
+    return;
+  }
+
+  detailStillBtn.disabled = true;
+  detailStillBtn.textContent = 'saving…';
+
+  const { data, error } = await sb.rpc('verify_item_still_there', {
+    p_item_id: activeDetailItem.id,
+    p_user_id: currentUser.id
+  });
+
+  if (error) {
+    console.error('verify failed:', error);
+
+    if ((error.message || '').toLowerCase().includes('already verified')) {
+      verifiedItemIds.add(activeDetailItem.id);
+      syncDetailVerifyState();
+      return;
+    }
+
+    detailStillBtn.disabled = false;
+    detailStillBtn.textContent = 'try again';
+    return;
+  }
+
+  verifiedItemIds.add(activeDetailItem.id);
+
+  const nextCount = Number(data ?? (activeDetailItem.confirm_count ?? 0) + 1);
+  activeDetailItem = {
+    ...activeDetailItem,
+    confirm_count: nextCount
+  };
+
+  allItems = allItems.map((item) => item.id === activeDetailItem.id ? { ...item, confirm_count: nextCount } : item);
+  if (detailCount) detailCount.textContent = String(nextCount);
+  syncDetailVerifyState();
+  renderVisibleItems();
 }
 
 function attachEvents() {
@@ -670,9 +767,7 @@ function attachEvents() {
   detailCloseBtn.addEventListener('click', closeDetailModal);
   detailBackdrop.addEventListener('click', closeDetailModal);
 
-  detailStillBtn.addEventListener('click', () => {
-    console.log('still there clicked', activeDetailItem);
-  });
+  detailStillBtn.addEventListener('click', handleStillThere);
   detailGoneBtn.addEventListener('click', () => {
     console.log('gone clicked', activeDetailItem);
   });
@@ -702,7 +797,13 @@ async function init() {
 
   const signedIn = await ensureAnonymousSession();
   if (!signedIn) return;
-  await loadItems();
+
+  await Promise.all([
+    loadVerifiedItemIds(),
+    loadItems()
+  ]);
+
+  subscribeToItemChanges();
 }
 
 init();
