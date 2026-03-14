@@ -4,11 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>reThing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="app-shell">
+    <section id="splash-screen" class="splash-screen" aria-label="Welcome screen">
+      <div class="splash-screen__bg" aria-hidden="true"></div>
+      <div class="splash-screen__content">
+        <div class="splash-screen__lockup">
+          <h1 class="splash-screen__brand" aria-label="Stoopid">
+            <span class="splash-screen__brand-main">St</span><span class="splash-screen__brand-accent">oo</span><span class="splash-screen__brand-main">pid</span>
+          </h1>
+          <p class="splash-screen__tagline">Good junk,<br>mapped.</p>
+        </div>
+
+        <button id="splash-go-btn" class="splash-screen__go" type="button" aria-label="Go to map">
+          GO
+        </button>
+      </div>
+    </section>
+
     <div id="map" class="map-fullscreen"></div>
 
     <header class="floating-topbar">

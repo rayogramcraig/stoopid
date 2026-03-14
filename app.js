@@ -1,6 +1,9 @@
 const sb = window.supabaseClient;
 
 const userPill = document.getElementById('user-pill');
+const splashScreen = document.getElementById('splash-screen');
+const splashGoBtn = document.getElementById('splash-go-btn');
+
 const form = document.getElementById('item-form');
 const formStatus = document.getElementById('form-status');
 
@@ -84,6 +87,11 @@ function escapeHtml(str = '') {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function dismissSplashScreen() {
+  if (!splashScreen || splashScreen.classList.contains('is-hidden')) return;
+  splashScreen.classList.add('is-hidden');
 }
 
 function setAuthError(message = 'Auth error') {
@@ -595,6 +603,10 @@ async function handleSubmit() {
 }
 
 function attachEvents() {
+  if (splashGoBtn) {
+    splashGoBtn.addEventListener('click', dismissSplashScreen);
+  }
+
   if (hereBtn) {
     hereBtn.addEventListener('click', moveMapToCurrentLocation);
     hereBtn.addEventListener('touchend', (event) => {
