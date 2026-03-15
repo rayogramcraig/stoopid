@@ -1247,7 +1247,7 @@ button {
   margin: 0 0 18px;
   font-size: clamp(3rem, 10vw, 4.8rem);
   line-height: 0.92;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.06em;
   color: #ffffff;
 }
@@ -1266,7 +1266,7 @@ button {
 }
 
 .install-splash__continue {
-  margin-top: auto;
+    margin-top: 70px;
   margin-bottom: max(3vh, 12px);
   align-self: flex-start;
   padding: 0;
@@ -1291,11 +1291,14 @@ button {
   }
 
   .install-splash__instructions {
-    margin-top: 14vh;
+      margin-top: 6vh;
+      padding: 28px;
+      border-radius: 38px;
+      background-color: #cdcdcd38;
   }
 
   .install-splash__title {
-    font-size: clamp(2.8rem, 10.8vw, 4rem);
+    font-size: clamp(0.8rem, 7.8vw, 4rem);
   }
 
   .install-splash__body {
