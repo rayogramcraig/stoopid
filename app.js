@@ -113,6 +113,22 @@ let selectedColorName = '';
 let selectedMaterialName = '';
 let colorPickerState = { hue: 35, saturation: 0.1, lightness: 0.92 };
 
+function primeInputForQuickReplace(input, value = '') {
+  if (!input) return;
+  input.value = value;
+  input.dataset.autoclearReady = value ? 'true' : 'false';
+}
+
+function clearInputOnFirstClick(input, onAfterClear) {
+  if (!input) return;
+  input.addEventListener('pointerdown', () => {
+    if (input.dataset.autoclearReady !== 'true') return;
+    input.value = '';
+    input.dataset.autoclearReady = 'false';
+    if (typeof onAfterClear === 'function') onAfterClear();
+  });
+}
+
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -852,7 +868,7 @@ function openPicker(config) {
   pickerSearchWrap.hidden = !config.searchable;
 
   if (config.searchable) {
-    pickerSearchInput.value = config.initialQuery || config.input.value || '';
+    primeInputForQuickReplace(pickerSearchInput, config.initialQuery || config.input.value || '');
     pickerSearchInput.placeholder = config.placeholder || '';
     pickerSearchInput.maxLength = config.maxLength || 200;
     renderPickerOptions(config, pickerSearchInput.value);
@@ -1379,7 +1395,7 @@ function openObjectSheet() {
   if (aiInFlight) return;
   if (!objectSheet || !objectSearchInput) return;
   objectSheet.hidden = false;
-  objectSearchInput.value = titleInput.value || '';
+  primeInputForQuickReplace(objectSearchInput, titleInput.value || '');
   renderObjectSheet();
   setTimeout(() => objectSearchInput.focus(), 30);
 }
@@ -1454,7 +1470,7 @@ function openMaterialSheet() {
   if (!materialSheet) return;
   materialSheet.hidden = false;
   selectedMaterialName = materialInput.value.trim().toLowerCase();
-  if (materialSearchInput) materialSearchInput.value = materialInput.value || '';
+  primeInputForQuickReplace(materialSearchInput, materialInput.value || '');
   renderMaterialOptions();
   setTimeout(() => materialSearchInput?.focus(), 30);
 }
@@ -1637,7 +1653,13 @@ function attachEvents() {
     });
   });
 
+  clearInputOnFirstClick(pickerSearchInput, () => {
+    if (!currentPicker) return;
+    renderPickerOptions(currentPicker, '');
+  });
+
   pickerSearchInput.addEventListener('input', () => {
+    pickerSearchInput.dataset.autoclearReady = 'false';
     if (!currentPicker) return;
     renderPickerOptions(currentPicker, pickerSearchInput.value);
   });
@@ -1658,7 +1680,12 @@ function attachEvents() {
     if (event.target === pickerSheet) closePicker();
   });
 
-  objectSearchInput?.addEventListener('input', renderObjectSheet);
+  clearInputOnFirstClick(objectSearchInput, renderObjectSheet);
+
+  objectSearchInput?.addEventListener('input', () => {
+    objectSearchInput.dataset.autoclearReady = 'false';
+    renderObjectSheet();
+  });
   objectOptions?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-object-value]');
     if (!button) return;
@@ -1667,7 +1694,12 @@ function attachEvents() {
     closeObjectSheet();
   });
 
-  materialSearchInput?.addEventListener('input', renderMaterialOptions);
+  clearInputOnFirstClick(materialSearchInput, renderMaterialOptions);
+
+  materialSearchInput?.addEventListener('input', () => {
+    materialSearchInput.dataset.autoclearReady = 'false';
+    renderMaterialOptions();
+  });
   materialOptions?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-material-value]');
     if (!button) return;
