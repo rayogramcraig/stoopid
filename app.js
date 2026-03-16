@@ -1,5 +1,8 @@
 const sb = window.supabaseClient;
 
+const GEMINI_ENDPOINT =
+  "https://juryvtbmjyaxitdvtzwc.supabase.co/functions/v1/gemini-tag-image-dev";
+
 const userPill = document.getElementById('user-pill');
 const installSplash = document.getElementById('install-splash');
 const installContinueBtn = document.getElementById('install-continue-btn');
@@ -11,6 +14,7 @@ const formStatus = document.getElementById('form-status');
 
 const titleInput = document.getElementById('title');
 const colorInput = document.getElementById('color');
+const materialInput = document.getElementById('material');
 const conditionInput = document.getElementById('condition');
 const latInput = document.getElementById('lat');
 const lngInput = document.getElementById('lng');
@@ -26,19 +30,44 @@ const modalBackdrop = document.getElementById('modal-backdrop');
 const addPhotoImage = document.getElementById('add-photo-image');
 const addPhotoEmpty = document.getElementById('add-photo-empty');
 const retakePhotoBtn = document.getElementById('retake-photo-btn');
+const aiThinking = document.getElementById('ai-thinking');
+const aiThinkingSkipBtn = document.getElementById('ai-thinking-skip-btn');
 
 const pickTitleBtn = document.getElementById('pick-title-btn');
 const pickColorBtn = document.getElementById('pick-color-btn');
+const pickMaterialBtn = document.getElementById('pick-material-btn');
 const pickConditionBtn = document.getElementById('pick-condition-btn');
 
 const pickTitleValue = document.getElementById('pick-title-value');
 const pickColorValue = document.getElementById('pick-color-value');
+const pickMaterialValue = document.getElementById('pick-material-value');
 const pickConditionValue = document.getElementById('pick-condition-value');
 
 const pickerSheet = document.getElementById('picker-sheet');
 const pickerSearchWrap = document.getElementById('picker-search-wrap');
 const pickerSearchInput = document.getElementById('picker-search-input');
 const pickerOptions = document.getElementById('picker-options');
+
+const objectSheet = document.getElementById('object-sheet');
+const objectSearchInput = document.getElementById('object-search-input');
+const objectAiWrap = document.getElementById('object-ai-wrap');
+const objectAiSuggestions = document.getElementById('object-ai-suggestions');
+const objectOptions = document.getElementById('object-options');
+
+const colorSheet = document.getElementById('color-sheet');
+const materialSheet = document.getElementById('material-sheet');
+const colorWheel = document.getElementById('color-wheel');
+const colorWheelKnob = document.getElementById('color-wheel-knob');
+const colorLightness = document.getElementById('color-lightness');
+const colorPreviewSwatch = document.getElementById('color-preview-swatch');
+const colorAiWrap = document.getElementById('color-ai-wrap');
+const colorAiApply = document.getElementById('color-ai-apply');
+const materialAiWrap = document.getElementById('material-ai-wrap');
+const materialAiSuggestions = document.getElementById('material-ai-suggestions');
+const materialSearchInput = document.getElementById('material-search-input');
+const materialOptions = document.getElementById('material-options');
+const colorSheetDoneBtn = document.getElementById('color-sheet-done-btn');
+const materialSheetDoneBtn = document.getElementById('material-sheet-done-btn');
 
 const mapSearchInput = document.getElementById('map-search');
 const filterAllBtn = document.getElementById('filter-all-btn');
@@ -77,6 +106,12 @@ let activeDetailItem = null;
 let verifiedItemIds = new Set();
 let itemsSubscription = null;
 let expirationRefreshTimer = null;
+let aiInFlight = false;
+let aiLastResult = null;
+let aiRequestSequence = 0;
+let selectedColorName = '';
+let selectedMaterialName = '';
+let colorPickerState = { hue: 35, saturation: 0.1, lightness: 0.92 };
 
 const DEFAULT_CENTER = [40.741, -73.989];
 const DEFAULT_ZOOM = 12;
@@ -85,92 +120,145 @@ const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 const MAX_CUSTOM_TITLE_LENGTH = 20;
 
 const OBJECT_LIST = [
-'air conditioner',
-'armchair',
-'bench',
-'bike',
-'bookcase',
-'cabinet',
-'chair',
-'chaise lounge',
-'coffee table',
-'console table',
-'couch',
-'crate',
-'desk',
-'desk chair',
-'dining chair',
-'dining table',
-'dog crate',
-'dresser',
-'end table',
-'fan',
-'filing cabinet',
-'folding chair',
-'futon',
-'headboard',
-'heater',
-'hutch',
-'lamp',
-'lawn chair',
-'lounge chair',
-'loveseat',
-'mattress',
-'media console',
-'mirror',
-'monitor',
-'nightstand',
-'office chair',
-'ottoman',
-'patio chair',
-'patio table',
-'piano',
-'plant',
-'planter',
-'printer',
-'rack',
-'recliner',
-'rocking chair',
-'rug',
-'shelf',
-'shoe rack',
-'side table',
-'sink',
-'sofa',
-'speaker',
-'stool',
-'storage bin',
-'storage cabinet',
-'storage shelf',
-'stroller',
-'suitcase',
-'swivel chair',
-'table',
-'table lamp',
-'toolbox',
-'tv',
-'tv stand',
-'vanity',
-'wardrobe',
-'washing machine',
-'wheelchair',
-'window',
-'wine rack',
-'workbench',
-'bed frame',
-'bed',
-'bunk bed',
-'daybed',
-'crib',
-'toilet',
-'bathtub',
-'microwave',
-'mini fridge'
+  'air conditioner',
+  'armchair',
+  'bench',
+  'bike',
+  'bookcase',
+  'cabinet',
+  'chair',
+  'chaise lounge',
+  'coffee table',
+  'console table',
+  'couch',
+  'crate',
+  'desk',
+  'desk chair',
+  'dining chair',
+  'dining table',
+  'dog crate',
+  'dresser',
+  'end table',
+  'fan',
+  'filing cabinet',
+  'folding chair',
+  'futon',
+  'headboard',
+  'heater',
+  'hutch',
+  'lamp',
+  'lawn chair',
+  'lounge chair',
+  'loveseat',
+  'mattress',
+  'media console',
+  'mirror',
+  'monitor',
+  'nightstand',
+  'office chair',
+  'ottoman',
+  'patio chair',
+  'patio table',
+  'piano',
+  'plant',
+  'planter',
+  'printer',
+  'rack',
+  'recliner',
+  'rocking chair',
+  'rug',
+  'shelf',
+  'shoe rack',
+  'side table',
+  'sink',
+  'sofa',
+  'speaker',
+  'stool',
+  'storage bin',
+  'storage cabinet',
+  'storage shelf',
+  'stroller',
+  'suitcase',
+  'swivel chair',
+  'table',
+  'table lamp',
+  'toolbox',
+  'tv',
+  'tv stand',
+  'vanity',
+  'wardrobe',
+  'washing machine',
+  'wheelchair',
+  'window',
+  'wine rack',
+  'workbench',
+  'bed frame',
+  'bed',
+  'bunk bed',
+  'daybed',
+  'crib',
+  'toilet',
+  'bathtub',
+  'microwave',
+  'mini fridge'
 ];
+
 const COLOR_LIST = [
-  'black','white','gray','silver','red','orange','yellow','green','blue','purple','pink','brown','tan','beige','cream','clear','wood','metal','chrome','steel','brass','cane','wicker','rattan','plastic','glass','leather','fabric','velvet'
+  'black','white','gray','silver','red','orange','yellow','green','blue',
+  'purple','pink','brown','tan','beige','cream','clear','wood','metal',
+  'chrome','steel','brass','cane','wicker','rattan','plastic','glass',
+  'leather','fabric','velvet'
 ];
+
+const MATERIAL_LIST = [
+  'wood',
+  'metal',
+  'plastic',
+  'glass',
+  'fabric',
+  'leather',
+  'paper',
+  'cardboard',
+  'ceramic',
+  'stone',
+  'wicker',
+  'rattan',
+  'rubber'
+];
+
 const CONDITION_LIST = ['Perfect','Great','Good','Scruffy','Salvage'];
+
+const COLOR_NAME_PRESETS = {
+  black: { hue: 0, saturation: 0, lightness: 0.08 },
+  white: { hue: 0, saturation: 0, lightness: 0.98 },
+  gray: { hue: 0, saturation: 0, lightness: 0.55 },
+  silver: { hue: 0, saturation: 0, lightness: 0.72 },
+  red: { hue: 0, saturation: 0.92, lightness: 0.55 },
+  orange: { hue: 28, saturation: 0.96, lightness: 0.56 },
+  yellow: { hue: 56, saturation: 0.98, lightness: 0.54 },
+  green: { hue: 122, saturation: 0.78, lightness: 0.42 },
+  blue: { hue: 215, saturation: 0.85, lightness: 0.52 },
+  purple: { hue: 276, saturation: 0.8, lightness: 0.56 },
+  pink: { hue: 328, saturation: 0.82, lightness: 0.68 },
+  brown: { hue: 28, saturation: 0.5, lightness: 0.36 },
+  tan: { hue: 33, saturation: 0.42, lightness: 0.68 },
+  beige: { hue: 42, saturation: 0.32, lightness: 0.83 },
+  cream: { hue: 50, saturation: 0.52, lightness: 0.9 },
+  clear: { hue: 0, saturation: 0, lightness: 0.97 },
+  wood: { hue: 32, saturation: 0.55, lightness: 0.46 },
+  metal: { hue: 210, saturation: 0.08, lightness: 0.66 },
+  chrome: { hue: 210, saturation: 0.05, lightness: 0.78 },
+  steel: { hue: 210, saturation: 0.11, lightness: 0.6 },
+  brass: { hue: 44, saturation: 0.74, lightness: 0.54 },
+  cane: { hue: 36, saturation: 0.4, lightness: 0.67 },
+  wicker: { hue: 34, saturation: 0.42, lightness: 0.62 },
+  rattan: { hue: 36, saturation: 0.35, lightness: 0.64 },
+  plastic: { hue: 0, saturation: 0, lightness: 0.95 },
+  glass: { hue: 205, saturation: 0.25, lightness: 0.9 },
+  leather: { hue: 22, saturation: 0.36, lightness: 0.31 },
+  fabric: { hue: 0, saturation: 0, lightness: 0.85 },
+  velvet: { hue: 310, saturation: 0.6, lightness: 0.42 }
+};
 
 function escapeHtml(str = '') {
   return String(str)
@@ -192,10 +280,9 @@ function isValidCustomTitle(value = '') {
 
 function getTitleValidationMessage(value = '') {
   const normalized = normalizeCustomTitle(value);
-
   if (!normalized) return 'Type an object name.';
   if (normalized.length > MAX_CUSTOM_TITLE_LENGTH) {
-    return `Keep object names under 21 characters.`;
+    return 'Keep object names under 21 characters.';
   }
   return '';
 }
@@ -734,7 +821,7 @@ function handlePhotoPreview() {
 }
 
 function hasAtLeastOneSelection() {
-  return Boolean(titleInput.value.trim() || colorInput.value.trim() || conditionInput.value.trim());
+  return Boolean(titleInput.value.trim() || colorInput.value.trim() || materialInput.value.trim() || conditionInput.value.trim());
 }
 
 function updateSubmitState() {
@@ -753,6 +840,7 @@ function setLineValue(buttonEl, textEl, value, placeholder) {
 function syncAddUI() {
   setLineValue(pickTitleBtn, pickTitleValue, titleInput.value, 'What is it?');
   setLineValue(pickColorBtn, pickColorValue, colorInput.value, 'Color');
+  setLineValue(pickMaterialBtn, pickMaterialValue, materialInput.value, 'Material');
   setLineValue(pickConditionBtn, pickConditionValue, conditionInput.value, 'Condition');
   updateSubmitState();
   refreshDraftMarkerLabel();
@@ -849,6 +937,7 @@ function promptCameraCapture() {
 function openAddModal() {
   addModal.hidden = false;
   syncAddUI();
+  clearAISuggestions();
   setTimeout(() => map.invalidateSize(), 40);
   useCurrentLocation({ silent: true });
   promptCameraCapture();
@@ -857,6 +946,9 @@ function openAddModal() {
 function closeAddModal() {
   addModal.hidden = true;
   closePicker();
+  closeObjectSheet();
+  closeColorSheet();
+  closeMaterialSheet();
   if (formStatus) formStatus.textContent = '';
 }
 
@@ -865,6 +957,7 @@ function resetAddForm() {
   latInput.value = '';
   lngInput.value = '';
   resetPhotoPreview();
+  clearAISuggestions();
   syncAddUI();
   if (draftMarker) {
     map.removeLayer(draftMarker);
@@ -910,7 +1003,7 @@ async function handleSubmit() {
   }
 
   const title = normalizedTitle || 'item';
-  const color = colorInput.value.trim() || null;
+  const color = combineColorMaterial(colorInput.value, materialInput.value) || null;
   const condition = conditionInput.value.trim() || null;
   const photoFile = photoInput.files?.[0] || null;
   const lat = latInput.value ? Number(latInput.value) : null;
@@ -1063,6 +1156,446 @@ async function handleGone() {
   renderVisibleItems();
 }
 
+
+function setAIThinkingState(isThinking) {
+  aiInFlight = isThinking;
+  if (aiThinking) aiThinking.hidden = !isThinking;
+
+  [pickTitleBtn, pickColorBtn, pickMaterialBtn, pickConditionBtn, retakePhotoBtn].forEach((button) => {
+    if (!button) return;
+    button.disabled = isThinking;
+    button.classList.toggle('is-disabled', isThinking);
+  });
+
+  if (aiThinkingSkipBtn) {
+    aiThinkingSkipBtn.disabled = !isThinking;
+  }
+
+  if (isThinking) {
+    closeObjectSheet();
+    closeColorSheet();
+    closeMaterialSheet();
+  }
+}
+
+function skipAIThinking() {
+  if (!aiInFlight) return;
+  aiRequestSequence += 1;
+  setAIThinkingState(false);
+  openObjectSheet();
+}
+
+
+function clearAISuggestions() {
+  setAIThinkingState(false);
+  aiLastResult = null;
+  if (objectAiWrap) objectAiWrap.hidden = true;
+  if (objectAiSuggestions) objectAiSuggestions.innerHTML = '';
+  if (colorAiWrap) colorAiWrap.hidden = true;
+  if (colorAiApply) colorAiApply.textContent = '';
+  if (materialAiWrap) materialAiWrap.hidden = true;
+  if (materialAiSuggestions) materialAiSuggestions.innerHTML = '';
+}
+
+function setAIStatus() {}
+
+function renderSuggestionButtons(container, values, onChoose, selectedValue = '') {
+  if (!container) return;
+
+  const selected = String(selectedValue || '').trim().toLowerCase();
+  container.innerHTML = (values || []).map((value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    const isSelected = normalized && normalized === selected;
+    return `
+      <button class="smart-chip${isSelected ? ' is-selected' : ''}" type="button" data-ai-value="${escapeHtml(value)}">
+        ${escapeHtml(value)}
+      </button>
+    `;
+  }).join('');
+
+  container.querySelectorAll('[data-ai-value]').forEach((button) => {
+    button.addEventListener('click', () => {
+      onChoose(button.dataset.aiValue || '');
+    });
+  });
+}
+
+function normalizeAIResponse(data) {
+  const objectSuggestions = Array.isArray(data?.objectSuggestions)
+    ? data.objectSuggestions.map((v) => String(v || '').trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  const materialSuggestions = Array.isArray(data?.materialSuggestions)
+    ? data.materialSuggestions.map((v) => String(v || '').trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  const colorSuggestion = String(data?.colorSuggestion || '').trim().toLowerCase();
+
+  return {
+    objectSuggestions: [...new Set(objectSuggestions)].slice(0, 3),
+    materialSuggestions: [...new Set(materialSuggestions)].slice(0, 3),
+    colorSuggestion
+  };
+}
+
+function parseColorMaterial(value = '') {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return { color: '', material: '' };
+
+  const material = MATERIAL_LIST.find((item) => raw.split(/\s+/).includes(item)) || '';
+  let color = raw;
+
+  if (material) {
+    color = raw.replace(material, '').replace(/\s+/g, ' ').trim();
+  }
+
+  if (color && !COLOR_LIST.includes(color)) {
+    color = '';
+  }
+
+  return { color, material };
+}
+
+function combineColorMaterial(colorName = '', materialName = '') {
+  const parts = [String(colorName || '').trim(), String(materialName || '').trim()].filter(Boolean);
+  return [...new Set(parts)].join(' ');
+}
+
+function hslToCss(h, s, l) {
+  return `hsl(${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
+}
+
+function setColorPickerFromName(name = '') {
+  const normalized = String(name || '').trim().toLowerCase();
+  const preset = COLOR_NAME_PRESETS[normalized] || COLOR_NAME_PRESETS.cream;
+  colorPickerState = { ...preset };
+  selectedColorName = normalized || nearestColorNameFromState();
+}
+
+function nearestColorNameFromState() {
+  const { hue, saturation, lightness } = colorPickerState;
+
+  if (lightness >= 0.95) return 'white';
+  if (lightness <= 0.12 && saturation <= 0.22) return 'black';
+  if (saturation <= 0.08) {
+    if (lightness < 0.38) return 'gray';
+    if (lightness < 0.68) return 'silver';
+    return 'white';
+  }
+
+  if (lightness > 0.88 && hue >= 38 && hue <= 62) return 'cream';
+  if (lightness > 0.8 && hue >= 30 && hue <= 58) return 'beige';
+  if (lightness > 0.62 && hue >= 24 && hue <= 42) return 'tan';
+  if (hue < 12 || hue >= 345) return 'red';
+  if (hue < 42) return lightness < 0.45 ? 'brown' : 'orange';
+  if (hue < 72) return 'yellow';
+  if (hue < 165) return 'green';
+  if (hue < 255) return 'blue';
+  if (hue < 310) return 'purple';
+  return 'pink';
+}
+
+function updateColorWheelUI() {
+  if (!colorWheel || !colorWheelKnob) return;
+
+  const radius = colorWheel.clientWidth / 2;
+  const angle = (colorPickerState.hue - 90) * (Math.PI / 180);
+  const distance = radius * Math.max(0.08, Math.min(0.98, colorPickerState.saturation));
+  const x = radius + Math.cos(angle) * distance;
+  const y = radius + Math.sin(angle) * distance;
+
+  colorWheelKnob.style.left = `${x}px`;
+  colorWheelKnob.style.top = `${y}px`;
+
+  if (colorLightness) {
+    colorLightness.value = String(Math.round(colorPickerState.lightness * 100));
+    colorLightness.style.setProperty('--track-color', hslToCss(colorPickerState.hue, colorPickerState.saturation, colorPickerState.lightness));
+  }
+
+  selectedColorName = nearestColorNameFromState();
+
+  if (colorPreviewSwatch) {
+    colorPreviewSwatch.style.background = hslToCss(colorPickerState.hue, colorPickerState.saturation, colorPickerState.lightness);
+  }
+}
+
+function setColorFromPointer(clientX, clientY) {
+  if (!colorWheel) return;
+  const rect = colorWheel.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  const radius = rect.width / 2;
+  const distance = Math.min(radius, Math.sqrt(dx * dx + dy * dy));
+  const angle = Math.atan2(dy, dx);
+  const hue = ((angle * 180 / Math.PI) + 90 + 360) % 360;
+  const saturation = Math.min(1, Math.max(0.08, distance / radius));
+
+  colorPickerState.hue = hue;
+  colorPickerState.saturation = saturation;
+  updateColorWheelUI();
+}
+
+function renderObjectSheet() {
+  if (!objectSearchInput || !objectOptions) return;
+
+  const query = objectSearchInput.value.trim().toLowerCase();
+  const filtered = OBJECT_LIST.filter((item) => item.includes(query));
+  const current = titleInput.value.trim().toLowerCase();
+
+  if (objectAiWrap) {
+    const suggestions = aiLastResult?.objectSuggestions || [];
+    objectAiWrap.hidden = !suggestions.length;
+    renderSuggestionButtons(objectAiSuggestions, suggestions, (value) => {
+      titleInput.value = value;
+      syncAddUI();
+      objectSearchInput.value = value;
+      renderObjectSheet();
+      closeObjectSheet();
+    }, current);
+  }
+
+  const matchesExisting = OBJECT_LIST.includes(query);
+  let html = '';
+
+  if (query && !matchesExisting && isValidCustomTitle(query)) {
+    html += `<button class="smart-option smart-option--custom" type="button" data-object-value="${escapeHtml(query)}">${escapeHtml(query)}</button>`;
+  }
+
+  html += filtered.map((item) => {
+    const selectedClass = item === current ? ' is-selected' : '';
+    return `<button class="smart-option${selectedClass}" type="button" data-object-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`;
+  }).join('');
+
+  if (!html) {
+    html = '<div class="smart-option smart-option--empty">No matches</div>';
+  }
+
+  objectOptions.innerHTML = html;
+}
+
+function openObjectSheet() {
+  if (aiInFlight) return;
+  if (!objectSheet || !objectSearchInput) return;
+  objectSheet.hidden = false;
+  objectSearchInput.value = titleInput.value || '';
+  renderObjectSheet();
+  setTimeout(() => objectSearchInput.focus(), 30);
+}
+
+function closeObjectSheet() {
+  if (objectSheet) objectSheet.hidden = true;
+}
+
+function renderMaterialOptions() {
+  if (!materialOptions || !materialSearchInput) return;
+
+  const query = materialSearchInput.value.trim().toLowerCase();
+  const filtered = MATERIAL_LIST.filter((item) => item.includes(query));
+
+  if (materialAiWrap) {
+    const suggestions = aiLastResult?.materialSuggestions || [];
+    materialAiWrap.hidden = !suggestions.length;
+    renderSuggestionButtons(materialAiSuggestions, suggestions, (value) => {
+      selectedMaterialName = value;
+      materialSearchInput.value = value;
+      renderMaterialOptions();
+    }, selectedMaterialName);
+  }
+
+  let html = filtered.map((item) => {
+    const selectedClass = item === selectedMaterialName ? ' is-selected' : '';
+    return `<button class="smart-option${selectedClass}" type="button" data-material-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`;
+  }).join('');
+
+  if (query && !MATERIAL_LIST.includes(query)) {
+    html = `<button class="smart-option smart-option--custom" type="button" data-material-value="${escapeHtml(query)}">${escapeHtml(query)}</button>` + html;
+  }
+
+  if (!html) html = '<div class="smart-option smart-option--empty">No matches</div>';
+  materialOptions.innerHTML = html;
+}
+
+function renderColorSheet() {
+  if (colorAiWrap && colorAiApply) {
+    const colorSuggestion = aiLastResult?.colorSuggestion || '';
+    colorAiWrap.hidden = !colorSuggestion;
+    colorAiApply.textContent = colorSuggestion;
+    colorAiApply.classList.toggle('is-selected', colorSuggestion && colorSuggestion === selectedColorName);
+  }
+
+  updateColorWheelUI();
+}
+
+function openColorSheet() {
+  if (aiInFlight) return;
+  if (!colorSheet) return;
+  colorSheet.hidden = false;
+
+  selectedColorName = colorInput.value.trim().toLowerCase() || aiLastResult?.colorSuggestion || 'cream';
+  setColorPickerFromName(selectedColorName);
+  renderColorSheet();
+}
+
+function closeColorSheet() {
+  if (colorSheet) colorSheet.hidden = true;
+}
+
+function commitColorSheet() {
+  if (aiInFlight) return;
+  colorInput.value = selectedColorName;
+  syncAddUI();
+  closeColorSheet();
+}
+
+function openMaterialSheet() {
+  if (aiInFlight) return;
+  if (!materialSheet) return;
+  materialSheet.hidden = false;
+  selectedMaterialName = materialInput.value.trim().toLowerCase();
+  if (materialSearchInput) materialSearchInput.value = materialInput.value || '';
+  renderMaterialOptions();
+  setTimeout(() => materialSearchInput?.focus(), 30);
+}
+
+function closeMaterialSheet() {
+  if (materialSheet) materialSheet.hidden = true;
+}
+
+function commitMaterialSheet() {
+  if (aiInFlight) return;
+  materialInput.value = selectedMaterialName;
+  syncAddUI();
+  closeMaterialSheet();
+}
+
+function refreshAIStageVisibility() {
+  renderObjectSheet();
+  renderColorSheet();
+  renderMaterialOptions();
+}
+
+function applyAISuggestions(ai) {
+  const normalized = normalizeAIResponse(ai);
+  aiLastResult = normalized;
+
+  if (!titleInput.value.trim() && normalized.objectSuggestions.length) {
+    titleInput.value = normalized.objectSuggestions[0];
+  }
+
+  const currentColor = colorInput.value.trim().toLowerCase();
+  const currentMaterial = materialInput.value.trim().toLowerCase();
+
+  if (!currentColor && normalized.colorSuggestion) {
+    selectedColorName = normalized.colorSuggestion;
+    colorInput.value = normalized.colorSuggestion;
+  } else if (currentColor) {
+    selectedColorName = currentColor;
+  }
+
+  if (!currentMaterial && normalized.materialSuggestions.length) {
+    selectedMaterialName = normalized.materialSuggestions[0];
+    materialInput.value = normalized.materialSuggestions[0];
+  } else if (currentMaterial) {
+    selectedMaterialName = currentMaterial;
+  }
+  syncAddUI();
+  refreshAIStageVisibility();
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const base64 = result.split(',')[1];
+      if (!base64) {
+        reject(new Error('Could not convert image to base64.'));
+        return;
+      }
+      resolve(base64);
+    };
+
+    reader.onerror = () => {
+      reject(reader.error || new Error('Could not read image.'));
+    };
+
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function getAISuggestionsFromBlob(blob) {
+  const imageBase64 = await blobToBase64(blob);
+
+  const res = await fetch(GEMINI_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      imageBase64,
+      mimeType: 'image/jpeg',
+      objectOptions: OBJECT_LIST,
+      materialOptions: MATERIAL_LIST
+    })
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (error) {
+    throw new Error('AI response was not valid JSON.');
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.error || 'AI tagging failed.');
+  }
+
+  return data;
+}
+
+async function runAIForPhoto(file) {
+  if (!file || aiInFlight) return;
+
+  const requestId = ++aiRequestSequence;
+  clearAISuggestions();
+  setAIThinkingState(true);
+
+  try {
+    const resizedBlob = await resizeImage(file, 1200, 0.82);
+    const ai = await getAISuggestionsFromBlob(resizedBlob);
+
+    if (requestId !== aiRequestSequence) {
+      return;
+    }
+
+    applyAISuggestions(ai);
+  } catch (error) {
+    if (requestId === aiRequestSequence) {
+      console.error('AI tagging failed:', error);
+    }
+  } finally {
+    if (requestId === aiRequestSequence) {
+      setAIThinkingState(false);
+    }
+  }
+}
+
+async function handlePhotoChange() {
+  handlePhotoPreview();
+
+  const file = photoInput.files?.[0];
+  if (!file) {
+    clearAISuggestions();
+    syncAddUI();
+    return;
+  }
+
+  await runAIForPhoto(file);
+}
+
 function attachEvents() {
   if (splashGoBtn) {
     splashGoBtn.addEventListener('click', dismissSplashScreen);
@@ -1086,28 +1619,22 @@ function attachEvents() {
   submitAddBtn.addEventListener('click', handleSubmit);
 
   retakePhotoBtn.addEventListener('click', promptCameraCapture);
-  photoInput.addEventListener('change', handlePhotoPreview);
+  photoInput.addEventListener('change', handlePhotoChange);
+  aiThinkingSkipBtn?.addEventListener('click', skipAIThinking);
 
-  pickTitleBtn.addEventListener('click', () => {
-    openPicker({
-      key: 'title',
-      input: titleInput,
-      options: OBJECT_LIST,
-      searchable: true,
-      requireQuery: true,
-      allowCustom: true,
-      maxLength: MAX_CUSTOM_TITLE_LENGTH,
-      placeholder: 'Object',
-      initialQuery: titleInput.value
-    });
-  });
+  pickTitleBtn.addEventListener('click', openObjectSheet);
 
-  pickColorBtn.addEventListener('click', () => {
-    openPicker({ key: 'color', input: colorInput, options: COLOR_LIST, searchable: true, placeholder: 'wood' });
-  });
+  pickColorBtn.addEventListener('click', openColorSheet);
+  pickMaterialBtn.addEventListener('click', openMaterialSheet);
 
   pickConditionBtn.addEventListener('click', () => {
-    openPicker({ key: 'condition', input: conditionInput, options: CONDITION_LIST, searchable: false, placeholder: '' });
+    openPicker({
+      key: 'condition',
+      input: conditionInput,
+      options: CONDITION_LIST,
+      searchable: false,
+      placeholder: ''
+    });
   });
 
   pickerSearchInput.addEventListener('input', () => {
@@ -1131,8 +1658,84 @@ function attachEvents() {
     if (event.target === pickerSheet) closePicker();
   });
 
-  titleInput.addEventListener('input', syncAddUI);
+  objectSearchInput?.addEventListener('input', renderObjectSheet);
+  objectOptions?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-object-value]');
+    if (!button) return;
+    titleInput.value = button.dataset.objectValue || '';
+    syncAddUI();
+    closeObjectSheet();
+  });
+
+  materialSearchInput?.addEventListener('input', renderMaterialOptions);
+  materialOptions?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-material-value]');
+    if (!button) return;
+    selectedMaterialName = button.dataset.materialValue || '';
+    materialSearchInput.value = selectedMaterialName;
+    renderMaterialOptions();
+  });
+
+  materialSheetDoneBtn?.addEventListener('click', commitMaterialSheet);
+
+  colorAiApply?.addEventListener('click', () => {
+    selectedColorName = aiLastResult?.colorSuggestion || selectedColorName;
+    setColorPickerFromName(selectedColorName);
+    renderColorSheet();
+  });
+
+  colorSheetDoneBtn?.addEventListener('click', commitColorSheet);
+
+  colorLightness?.addEventListener('input', (event) => {
+    colorPickerState.lightness = Number(event.target.value) / 100;
+    updateColorWheelUI();
+  });
+
+  if (colorWheel) {
+    let draggingColor = false;
+
+    const handleMove = (clientX, clientY) => {
+      if (!draggingColor) return;
+      setColorFromPointer(clientX, clientY);
+    };
+
+    colorWheel.addEventListener('pointerdown', (event) => {
+      draggingColor = true;
+      colorWheel.setPointerCapture?.(event.pointerId);
+      setColorFromPointer(event.clientX, event.clientY);
+    });
+
+    colorWheel.addEventListener('pointermove', (event) => {
+      handleMove(event.clientX, event.clientY);
+    });
+
+    const stopDragging = () => {
+      draggingColor = false;
+    };
+
+    colorWheel.addEventListener('pointerup', stopDragging);
+    colorWheel.addEventListener('pointercancel', stopDragging);
+  }
+
+  objectSheet?.addEventListener('click', (event) => {
+    if (event.target === objectSheet) closeObjectSheet();
+  });
+
+  colorSheet?.addEventListener('click', (event) => {
+    if (event.target === colorSheet) closeColorSheet();
+  });
+
+  materialSheet?.addEventListener('click', (event) => {
+    if (event.target === materialSheet) closeMaterialSheet();
+  });
+
+  titleInput.addEventListener('input', () => {
+    syncAddUI();
+    refreshAIStageVisibility();
+  });
+
   colorInput.addEventListener('input', syncAddUI);
+  materialInput.addEventListener('input', syncAddUI);
   conditionInput.addEventListener('input', syncAddUI);
 
   mapSearchInput.addEventListener('input', (event) => {
@@ -1167,6 +1770,18 @@ function attachEvents() {
   });
 
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && objectSheet && !objectSheet.hidden) {
+      closeObjectSheet();
+      return;
+    }
+    if (event.key === 'Escape' && colorSheet && !colorSheet.hidden) {
+      closeColorSheet();
+      return;
+    }
+    if (event.key === 'Escape' && materialSheet && !materialSheet.hidden) {
+      closeMaterialSheet();
+      return;
+    }
     if (event.key === 'Escape' && !pickerSheet.hidden) {
       closePicker();
       return;
