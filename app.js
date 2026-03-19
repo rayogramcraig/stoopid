@@ -112,6 +112,7 @@ let aiRequestSequence = 0;
 let selectedColorName = '';
 let selectedMaterialName = '';
 let colorPickerState = { hue: 35, saturation: 0.1, lightness: 0.92 };
+let hasCenteredOnUser = false;
 
 function primeInputForQuickReplace(input, value = '') {
   if (!input) return;
@@ -301,6 +302,42 @@ function getTitleValidationMessage(value = '') {
     return 'Keep object names under 21 characters.';
   }
   return '';
+}
+
+function getLocationErrorMessage(error) {
+  if (!error) return 'Location error';
+  if (error.code === 1) return 'Location blocked';
+  if (error.code === 2) return 'Location unavailable';
+  if (error.code === 3) return 'Location timeout';
+  return 'Location error';
+}
+
+function placeOrUpdateUserMarker(lat, lng) {
+  if (!map) return;
+  if (!userMarker) {
+    userMarker = L.marker([lat, lng], { icon: createLabeledIcon('you', ' is-user') }).addTo(map);
+  } else {
+    userMarker.setLatLng([lat, lng]);
+  }
+}
+
+function autoLocateOnLaunch() {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      placeOrUpdateUserMarker(lat, lng);
+      map.setView([lat, lng], 16);
+      hasCenteredOnUser = true;
+    },
+    (error) => {
+      console.log('Initial location failed:', error);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+  );
 }
 
 async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
@@ -547,17 +584,13 @@ async function useCurrentLocation(options = {}) {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       setDraftLocation(lat, lng, silent ? 'Location ready.' : 'Location added.');
-
-      if (!userMarker) {
-        userMarker = L.marker([lat, lng], { icon: createLabeledIcon('you', ' is-user') }).addTo(map);
-      } else {
-        userMarker.setLatLng([lat, lng]);
-      }
+      placeOrUpdateUserMarker(lat, lng);
       map.setView([lat, lng], 16);
+      hasCenteredOnUser = true;
     },
     (error) => {
       console.error(error);
-      if (!silent && formStatus) formStatus.textContent = `Location failed: ${error.message}`;
+      if (!silent && formStatus) formStatus.textContent = `Location failed: ${getLocationErrorMessage(error)}`;
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
@@ -587,26 +620,23 @@ function moveMapToCurrentLocation() {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      if (!userMarker) {
-        userMarker = L.marker([lat, lng], { icon: createLabeledIcon('you', ' is-user') }).addTo(map);
-      } else {
-        userMarker.setLatLng([lat, lng]);
-      }
+      placeOrUpdateUserMarker(lat, lng);
 
       map.flyTo([lat, lng], Math.max(map.getZoom(), 16), {
         animate: true,
         duration: 0.75
       });
 
+      hasCenteredOnUser = true;
       resetHereButton();
     },
     (error) => {
       console.error('HERE button location failed:', error);
       resetHereButton();
-      if (userPill) userPill.textContent = 'Location blocked';
-      setTimeout(() => renderUser(), 1800);
+      if (userPill) userPill.textContent = getLocationErrorMessage(error);
+      setTimeout(() => renderUser(), 2000);
     },
-    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
   );
 }
 
@@ -734,11 +764,11 @@ function updateMapMarkers(items) {
     bounds.push([item.lat, item.lng]);
   });
 
-  if (bounds.length) {
+  if (!hasCenteredOnUser && bounds.length) {
     map.fitBounds(L.latLngBounds(bounds), { padding: [60, 120], maxZoom: 16 });
-  } else if (draftMarker) {
+  } else if (!hasCenteredOnUser && draftMarker) {
     map.setView(draftMarker.getLatLng(), 16);
-  } else {
+  } else if (!hasCenteredOnUser) {
     map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   }
 }
@@ -1172,7 +1202,6 @@ async function handleGone() {
   renderVisibleItems();
 }
 
-
 function setAIThinkingState(isThinking) {
   aiInFlight = isThinking;
   if (aiThinking) aiThinking.hidden = !isThinking;
@@ -1200,7 +1229,6 @@ function skipAIThinking() {
   setAIThinkingState(false);
   openObjectSheet();
 }
-
 
 function clearAISuggestions() {
   setAIThinkingState(false);
@@ -1844,6 +1872,7 @@ async function init() {
   attachEvents();
   resetAddForm();
   startExpirationRefreshLoop();
+  autoLocateOnLaunch();
 
   const signedIn = await ensureAnonymousSession();
   if (!signedIn) return;
